@@ -13,7 +13,8 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#202020" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f3f3f3" media="(prefers-color-scheme: light)">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23202020'/%3E%3Crect x='5' y='6' width='13' height='5' rx='1.5' fill='%238ab4f8'/%3E%3Crect x='5' y='13.5' width='13' height='5' rx='1.5' fill='%23fff' fill-opacity='.4'/%3E%3Crect x='5' y='21' width='13' height='5' rx='1.5' fill='%23fff' fill-opacity='.4'/%3E%3Crect x='20.5' y='6' width='6.5' height='20' rx='1.5' fill='%23fff' fill-opacity='.14'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
 <script>
 (function () {
   var d = document.documentElement, l = null, c = null;
@@ -56,7 +57,7 @@
 
 <main class="content">
   <div class="bar">
-    <span class="bar-name">Vertical Tabs for Notepad</span>
+    <span class="bar-name"><img src="assets/icon-32.png" alt="">Vertical Tabs for Notepad</span>
     <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/releases/latest">Download</a>
     <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad">GitHub</a>
     <div class="lang" role="group" aria-label="Language">
@@ -66,6 +67,7 @@
   </div>
 
   <section id="overview" class="hero">
+    <img class="app-icon" src="assets/icon-128.png" width="72" height="72" alt="">
     <h1>Vertical Tabs for Notepad</h1>
     <p class="lead" lang="en">Your Notepad tabs in a column on the left, like the vertical tabs in Chrome and Edge. With tab colors, a back-to-top button and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> to reopen closed tabs.</p>
     <p class="lead" lang="it">Le schede del Blocco note in una colonna a sinistra, come le schede verticali di Chrome ed Edge. Con i colori delle schede, un pulsante "Torna su" e <kbd>Ctrl</kbd>+<kbd>Maiusc</kbd>+<kbd>T</kbd> per riaprire le schede chiuse.</p>
@@ -76,8 +78,8 @@
       </a>
       <a class="button" href="https://github.com/LucaSorvillo/vertical-tabs-notepad"><span lang="en">Source code on GitHub</span><span lang="it">Codice sorgente su GitHub</span></a>
     </div>
-    <p class="muted" lang="en">Free and open source, MIT license. Windows 11, 64-bit. Version 1.1.0.</p>
-    <p class="muted" lang="it">Gratis e open source, licenza MIT. Windows 11 a 64 bit. Versione 1.1.0.</p>
+    <p class="muted" lang="en">Free and open source, MIT license. Windows 11, 64-bit. Version 1.2.0.</p>
+    <p class="muted" lang="it">Gratis e open source, licenza MIT. Windows 11 a 64 bit. Versione 1.2.0.</p>
     <figure>
       <img class="shot" src="assets/notepad-hero.png" width="1180" height="760" alt="Notepad with its tabs in a column on the left: some tabs are tinted blue, green, orange, red and purple">
     </figure>
@@ -139,14 +141,14 @@
   <section id="reopen">
     <h2 data-color="orange"><span lang="en">Reopen closed tabs</span><span lang="it">Riapri le schede chiuse</span></h2>
     <div class="prose">
-      <p lang="en">Closed a tab by mistake? Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>: it comes back in its place and becomes the active tab. Press again to go further back, up to the last 25 tabs. Like in Chrome, the history survives closing the window or Notepad.</p>
-      <p lang="it">Hai chiuso una scheda per sbaglio? Premi <kbd>Ctrl</kbd>+<kbd>Maiusc</kbd>+<kbd>T</kbd>: torna al suo posto e diventa quella attiva. Premendo di nuovo vai a ritroso, fino alle ultime 25 schede. Come in Chrome, la cronologia resta anche chiudendo la finestra o il Blocco note.</p>
-      <p lang="en">It works for saved files: only the path and the position of each tab are stored, never the content. The shortcut is taken only while a Notepad window is active, so your browser keeps it.</p>
-      <p lang="it">Vale per i file salvati: di ogni scheda si ricordano solo il percorso e la posizione, mai il contenuto. La scorciatoia si prende solo mentre è attiva una finestra del Blocco note, quindi il browser la tiene.</p>
+      <p lang="en">Closed a tab by mistake? Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>: it comes back in its place, with its color, and becomes the active tab. Press again to go further back, up to the last 25 tabs. Like in Chrome, the history survives closing the window or Notepad.</p>
+      <p lang="it">Hai chiuso una scheda per sbaglio? Premi <kbd>Ctrl</kbd>+<kbd>Maiusc</kbd>+<kbd>T</kbd>: torna al suo posto, con il suo colore, e diventa quella attiva. Premendo di nuovo vai a ritroso, fino alle ultime 25 schede. Come in Chrome, la cronologia resta anche chiudendo la finestra o il Blocco note.</p>
+      <p lang="en">It works for saved files: only the path, the position and the color of each tab are stored, never the content. The shortcut is taken only while a Notepad window is active, so your browser keeps it.</p>
+      <p lang="it">Vale per i file salvati: di ogni scheda si ricordano solo il percorso, la posizione e il colore, mai il contenuto. La scorciatoia si prende solo mentre è attiva una finestra del Blocco note, quindi il browser la tiene.</p>
     </div>
     <figure>
-      <img class="shot" src="assets/notepad-reopen.gif" width="900" height="579" loading="lazy" decoding="async" alt="Recording: the Todo tab is closed with its close button, then comes back in the same place">
-      <figcaption><span lang="en">A tab closed with × and brought back with <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>.</span><span lang="it">Una scheda chiusa con × e riportata con <kbd>Ctrl</kbd>+<kbd>Maiusc</kbd>+<kbd>T</kbd>.</span></figcaption>
+      <img class="shot" src="assets/notepad-reopen.gif" width="900" height="579" loading="lazy" decoding="async" alt="Recording: the red Todo tab is closed with its close button, then comes back in the same place, still red">
+      <figcaption><span lang="en">A tab closed with × and brought back in its place with <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>, color included.</span><span lang="it">Una scheda chiusa con × e riportata al suo posto con <kbd>Ctrl</kbd>+<kbd>Maiusc</kbd>+<kbd>T</kbd>, colore compreso.</span></figcaption>
     </figure>
   </section>
 
@@ -169,12 +171,12 @@
   <section id="install">
     <h2><span lang="en">Install</span><span lang="it">Installazione</span></h2>
     <ol class="steps" lang="en">
-      <li>Download <code>VTabsNotepad-1.1.0-setup.exe</code> from the <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/releases/latest">latest release</a>.</li>
+      <li>Download <code>VTabsNotepad-1.2.0-setup.exe</code> from the <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/releases/latest">latest release</a>.</li>
       <li>Run it. No administrator rights needed: it installs for your user only, in English or Italian.</li>
       <li>Open Notepad. The app runs in the notification area and adds the vertical tabs, also to the windows that are already open.</li>
     </ol>
     <ol class="steps" lang="it">
-      <li>Scarica <code>VTabsNotepad-1.1.0-setup.exe</code> dall'<a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/releases/latest">ultima release</a>.</li>
+      <li>Scarica <code>VTabsNotepad-1.2.0-setup.exe</code> dall'<a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/releases/latest">ultima release</a>.</li>
       <li>Avvialo. Non servono diritti di amministratore: si installa solo per il tuo utente, in italiano o in inglese.</li>
       <li>Apri il Blocco note. L'app resta nell'area di notifica e aggiunge le schede verticali, anche alle finestre già aperte.</li>
     </ol>

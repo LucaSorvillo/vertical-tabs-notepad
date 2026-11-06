@@ -1,4 +1,4 @@
-# Vertical Tabs for Notepad
+# <img src="docs/assets/icon-128.png" alt="" width="40" height="40"> Vertical Tabs for Notepad
 
 **Schede verticali come in Chrome per il Blocco note di Windows 11**, con i colori delle schede, un pulsante
 "Torna su" e <kbd>Ctrl</kbd>+<kbd>Maiusc</kbd>+<kbd>T</kbd> per riaprire le schede chiuse.
@@ -56,7 +56,8 @@ la freccia. Un clic riporta all'inizio e restituisce la tastiera al testo. Ogni 
 
 ![Una scheda chiusa e riaperta](docs/assets/notepad-reopen.gif)
 
-Come nel browser: la scheda chiusa per sbaglio torna **al suo posto** e diventa quella attiva. Premendo di
+Come nel browser: la scheda chiusa per sbaglio torna **al suo posto**, con il suo colore, e diventa
+quella attiva. Premendo di
 nuovo si va a ritroso, fino alle ultime 25 schede. Come in Chrome, la cronologia resta anche chiudendo la
 finestra o il Blocco note.
 
@@ -124,7 +125,7 @@ Spegnendo le schede verticali torna subito la normale barra delle schede del Blo
 - Tutto resta in `%LOCALAPPDATA%\VTabsNotepad`:
   - `settings.ini`: le opzioni del menu della tray e la larghezza della colonna.
   - `tab-colors.ini`: i colori delle schede, legati all'identificativo interno della scheda.
-  - `closed-tabs.txt`: percorso e posizione delle ultime 25 schede chiuse (solo file salvati).
+  - `closed-tabs.txt`: percorso, posizione e colore delle ultime 25 schede chiuse (solo file salvati).
   - `logs\`: un registro diagnostico, che può contenere nomi di file. Controllalo prima di allegarlo a una
     segnalazione.
   - `runtime\`: una copia del modulo caricato nel Blocco note, così l'app si può aggiornare anche con il

@@ -535,6 +535,19 @@ namespace npx
             if (!entry->reopenTab)
             {
                 entry->reopenTab = std::make_shared<ReopenTab>(tabsBar);
+                // Il colore della scheda riaperta passa dalla colonna (aggiorna subito la riga); senza colonna solo nel file.
+                std::weak_ptr<WindowEntry> weakEntry = entry;
+                entry->reopenTab->restoreColor = [weakEntry](winrt::guid const& tabId, tabcolors::TabColor color) {
+                    const auto locked = weakEntry.lock();
+                    if (locked && locked->verticalTabs)
+                    {
+                        locked->verticalTabs->RestoreTabColor(tabId, color);
+                    }
+                    else
+                    {
+                        tabcolors::Set(tabId, color);
+                    }
+                };
             }
             entry->reopenTab->Apply(settings);
         }

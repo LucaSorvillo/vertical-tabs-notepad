@@ -170,12 +170,13 @@ scorreva. Cambiare lo stile esteso, invece, non genera nessun movimento.
 
 ### Riapri la scheda chiusa (Ctrl+Maiusc+T)
 
-Come nel browser: la scheda chiusa per sbaglio torna **al posto che aveva** nell'elenco, e premendo di
+Come nel browser: la scheda chiusa per sbaglio torna **al posto che aveva** nell'elenco, con il suo colore (dalla
+1.2.0), e premendo di
 nuovo si va a ritroso (le ultime 25). Come in Chrome la cronologia **resta anche chiudendo la finestra o il
 Blocco note**: si chiude una scheda, si chiude la finestra, si riapre il Blocco note e Ctrl+Maiusc+T la
 riporta. Vale in qualunque finestra. Vale per le schede di file salvati: di ognuna si ricordano solo il
 percorso e la posizione, in `%LOCALAPPDATA%\VTabsNotepad\closed-tabs.txt` (una riga "posto, tabulazione,
-percorso" per scheda; mai il contenuto). Una scheda **mai salvata** non si può riaprire e al comando non
+percorso" per scheda, più tabulazione e colore se ne aveva uno; mai il contenuto). Una scheda **mai salvata** non si può riaprire e al comando non
 succede nulla — a quella ci pensa la richiesta di salvataggio che il Blocco note fa già quando la si
 chiude. Si accende e si spegne dal menu della tray (`[ReopenTab] Enabled`), indipendentemente dalle schede
 verticali; **spegnendola il file si cancella**.

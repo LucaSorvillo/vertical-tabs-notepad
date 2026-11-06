@@ -81,7 +81,7 @@ to `TabsBar`, `TabItemViewModel` and their commands (`ReorderTab`, `SelectTabByT
 | --- | --- |
 | `VerticalTabs.cpp` | The column: a `ListView` of rows bound to Notepad's tab view models, in its own `DesktopWindowXamlSource` with a `MicaBackdrop`. Switch, close, new tab, drag reordering (`TabsBar.ReorderTab`), Notepad's context menu shown on the real tab plus the "Tab color" submenu, collapse, width. |
 | `BackToTop.cpp` | Listens to the `ViewChanged` event of Notepad's vertical `ScrollViewer`. The button lives in its own layered island; it is hidden with opacity and `WS_EX_TRANSPARENT` instead of `ShowWindow`, because showing or hiding a window makes Windows synthesize a `WM_MOUSEMOVE` that changes Notepad's scrollbar. |
-| `ReopenTab.cpp` | Detects closed tabs from `TabItems` changes, with a 0.5 s grace period because a reorder also removes and re-adds a tab. Stores path and position in `closed-tabs.txt`, behind a named mutex. Reopens a file by launching Notepad with it, then moves the new tab to its old place and selects it after Notepad's own selection change. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> is registered with `RegisterHotKey` only while the window is active. |
+| `ReopenTab.cpp` | Detects closed tabs from `TabItems` changes, with a 0.5 s grace period because a reorder also removes and re-adds a tab. Stores path, position and color in `closed-tabs.txt`, behind a named mutex. Reopens a file by launching Notepad with it, then moves the new tab to its old place, gives it back its color (through the column, so the row updates at once) and selects it after Notepad's own selection change. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> is registered with `RegisterHotKey` only while the window is active. |
 | `WheelScroll.cpp` | A per-thread `WH_GETMESSAGE` hook on each editor thread turns `WM_MOUSEWHEEL` into `EM_LINESCROLL`, with a pixel fallback clamped to the end of the document. |
 | `ScrollBarFit.cpp` | Notepad sizes its scrollbars for its own layout and sets them again at every layout pass. A synchronous property-changed callback adds the difference to both the viewport and the content. |
 | `ScrollBarHover.cpp` | Sets WinUI's 0.4 s scrollbar expand delay to zero by editing the template's storyboards. |
@@ -113,6 +113,8 @@ All in `%LOCALAPPDATA%\VTabsNotepad`: `settings.ini`, `tab-colors.ini`, `closed-
 
 - `build.ps1` loads the Visual Studio x64 environment, generates the projections and builds with CMake + Ninja
   into `build\bin`.
+- `tools\Make-Icon.ps1` draws the app icon, the tray icon on a dark tile, into `src\launcher\VTabsNotepad.ico` (used by the
+  executable and the setup) and into the PNGs of the website and the README.
 - `tools\Generate-Projections.ps1` runs `cppwinrt.exe` on the Windows SDK, on the Windows App SDK runtime that
   Notepad depends on, and on `NotepadXamlUI.winmd`. It rebuilds the projections when one of them changes.
 - `installer\VTabsNotepad.iss` is the Inno Setup script: per-user install, no admin rights, English and Italian.

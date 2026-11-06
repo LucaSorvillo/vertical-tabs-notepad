@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 — 2026-11-06
+
+- <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>: the reopened tab gets its color back too, like in VTabsExplorer.
+- App icon: the tray icon on a dark tile, for the executable, the setup, the website and the README.
+- The tray icon tooltip shows only the app name.
+
 ## 1.1.0 — 2026-11-06
 
 - The app follows the Windows display language: Italian if Windows is in Italian, English otherwise. This covers

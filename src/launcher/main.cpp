@@ -244,8 +244,7 @@ namespace
         data.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_SHOWTIP;
         data.uCallbackMessage = WM_TRAY;
         data.hIcon = icon;
-        wcscpy_s(data.szTip, IsDevModeActive() ? npx::Tr(L"VTabsNotepad - dev mode on", L"VTabsNotepad - modalità sviluppo attiva")
-                                           : npx::Tr(L"VTabsNotepad - Notepad with vertical tabs", L"VTabsNotepad - Blocco note con schede verticali"));
+        wcscpy_s(data.szTip, npx::kAppName); // solo il nome dell'app
         Shell_NotifyIconW(message, &data);
         if (message == NIM_ADD)
         {

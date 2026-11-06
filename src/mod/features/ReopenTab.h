@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Settings.h"
+#include "TabColors.h"
 
 namespace npx
 {
@@ -8,7 +9,7 @@ namespace npx
     // browser: la scheda chiusa per sbaglio torna al suo posto nell'elenco, e premendo di nuovo si va a
     // ritroso.
     //
-    // Di ogni scheda chiusa si ricordano soltanto il percorso del file e il posto che aveva, nel file
+    // Di ogni scheda chiusa si ricordano soltanto il percorso del file, il posto e il colore che aveva, nel file
     // closed-tabs.txt della cartella dati (le ultime 25, una riga ciascuna), come le schede chiuse di
     // Chrome: valgono per tutte le finestre e anche dopo aver chiuso e riaperto il Blocco note. Nessun
     // contenuto dei documenti: una scheda mai salvata non si può riaprire, e al comando non succede
@@ -54,6 +55,8 @@ namespace npx
         void Detach();
         // Comando della tray (--reopen-tab): agisce solo sulla finestra attiva, come la scorciatoia.
         void ReopenIfActive();
+        // Colore da rimettere alla scheda riaperta (impostato da ModCore: passa dalla colonna, se c'è, che aggiorna la riga).
+        std::function<void(winrt::guid const&, tabcolors::TabColor)> restoreColor;
 
     private:
         struct Known   // scheda aperta adesso
@@ -67,12 +70,14 @@ namespace npx
             std::wstring path;
             size_t index = 0;
             ULONGLONG when = 0;
+            tabcolors::TabColor color = tabcolors::TabColor::None; // colore che aveva (torna con lei)
         };
         struct Reopening // riapertura chiesta: si attende che la scheda compaia per rimetterla al suo posto
         {
             std::wstring path;
             size_t index = 0;
             ULONGLONG started = 0;
+            tabcolors::TabColor color = tabcolors::TabColor::None;
         };
 
         static LRESULT CALLBACK SubclassProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR id, DWORD_PTR refData);

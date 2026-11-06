@@ -35,6 +35,9 @@ namespace npx
         winrt::Microsoft::UI::Xaml::UIElement PanelRoot() const { return m_root; }
         // restore=true: ripristina il Blocco note com'era; false: la finestra si sta chiudendo.
         void Detach(bool restore);
+        // Colore dato a una scheda dall'esterno (una scheda riaperta con Ctrl+Maiusc+T riprende il suo): come la voce
+        // "Colore scheda" del menu.
+        void RestoreTabColor(winrt::guid const& tabId, tabcolors::TabColor color) { SetTabColor(tabId, color); }
 
         // Chiamata (sul thread della finestra) quando la finestra del Blocco note viene distrutta.
         std::function<void()> onWindowClosed;

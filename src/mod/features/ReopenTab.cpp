@@ -55,13 +55,33 @@ namespace npx
         }
 
         // --- Cronologia delle schede chiuse su disco (closed-tabs.txt nella cartella dati) ---------------------------------
-        // Una riga per scheda, "posto<TAB>percorso" in UTF-8, la più recente in fondo; le righe con # sono commenti. Il
-        // percorso non può contenere tabulazioni né a capo (caratteri non validi nei nomi di Windows).
+        // Una riga per scheda, "posto<TAB>percorso[<TAB>colore]" in UTF-8, la più recente in fondo; le righe con # sono
+        // commenti. Il percorso non può contenere tabulazioni né a capo (caratteri non validi nei nomi di Windows). Il colore
+        // è la chiave di tab-colors.ini (grey, blue...), assente se la scheda non ne aveva.
         struct StoredTab
         {
             std::wstring path;
             size_t index = 0;
+            std::wstring color;
         };
+
+        std::wstring ColorKey(tabcolors::TabColor color)
+        {
+            const tabcolors::Swatch* swatch = tabcolors::Find(color);
+            return swatch ? std::wstring{ swatch->key } : std::wstring{};
+        }
+
+        tabcolors::TabColor ColorFromKey(std::wstring const& key)
+        {
+            for (auto const& swatch : tabcolors::Palette())
+            {
+                if (EqualsIgnoreCase(key, swatch.key))
+                {
+                    return swatch.color;
+                }
+            }
+            return tabcolors::TabColor::None;
+        }
 
         std::wstring StorePath()
         {
@@ -153,7 +173,12 @@ namespace npx
                 }
                 StoredTab entry;
                 entry.index = static_cast<size_t>(wcstoul(line.substr(0, tab).c_str(), nullptr, 10));
-                entry.path = line.substr(tab + 1);
+                const size_t colorTab = line.find(L'\t', tab + 1);
+                entry.path = line.substr(tab + 1, colorTab == std::wstring::npos ? std::wstring::npos : colorTab - tab - 1);
+                if (colorTab != std::wstring::npos)
+                {
+                    entry.color = line.substr(colorTab + 1);
+                }
                 if (LooksLikeFilePath(entry.path))
                 {
                     entries.push_back(std::move(entry));
@@ -175,10 +200,10 @@ namespace npx
                 DeleteFileW(path.c_str());
                 return;
             }
-            std::wstring text = L"# VTabsNotepad: schede chiuse per Ctrl+Maiusc+T (posto e percorso, la piu' recente in fondo).\r\n";
+            std::wstring text = L"# VTabsNotepad: schede chiuse per Ctrl+Maiusc+T (posto, percorso e colore, la piu' recente in fondo).\r\n";
             for (auto const& entry : entries)
             {
-                text += std::to_wstring(entry.index) + L"\t" + entry.path + L"\r\n";
+                text += std::to_wstring(entry.index) + L"\t" + entry.path + (entry.color.empty() ? std::wstring{} : L"\t" + entry.color) + L"\r\n";
             }
             const int bytes = WideCharToMultiByte(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0, nullptr, nullptr);
             if (bytes <= 0)
@@ -420,7 +445,7 @@ namespace npx
             const auto sameId = [&](auto const& entry) { return entry.tabId == old.tabId; };
             if (std::none_of(fresh.begin(), fresh.end(), sameId) && std::none_of(m_gone.begin(), m_gone.end(), sameId))
             {
-                m_gone.push_back(Gone{ old.tabId, old.path, i, now });
+                m_gone.push_back(Gone{ old.tabId, old.path, i, now, tabcolors::Get(old.tabId) });
             }
         }
         // Tornate: era un riordino, non una chiusura.
@@ -442,6 +467,7 @@ namespace npx
             }
             const size_t wanted = std::min(pending->index, m_known.size() - 1);
             const winrt::guid tabId = m_known[i].tabId; // (ReorderTab rientra qui e rifà m_known)
+            const tabcolors::TabColor color = pending->color;
             m_reopening.erase(pending); // prima dello spostamento: ReorderTab rientra qui dentro
             if (i != wanted)
             {
@@ -457,7 +483,19 @@ namespace npx
                             static_cast<unsigned>(winrt::to_hresult()));
                 }
             }
-            NPX_VLOG(L"ReopenTab: scheda riaperta al posto %zu (era comparsa al %zu).", wanted, i);
+            // Torna anche con il suo colore, come in VTabsExplorer (la scheda nuova ha un altro TabId)
+            if (color != tabcolors::TabColor::None)
+            {
+                if (restoreColor)
+                {
+                    restoreColor(tabId, color);
+                }
+                else
+                {
+                    tabcolors::Set(tabId, color);
+                }
+            }
+            NPX_VLOG(L"ReopenTab: scheda riaperta al posto %zu (era comparsa al %zu)%s.", wanted, i, color != tabcolors::TabColor::None ? L", con il suo colore" : L"");
             break;
         }
     }
@@ -539,7 +577,7 @@ namespace npx
             }
             if (LooksLikeFilePath(it->path))
             {
-                confirmed.push_back(StoredTab{ it->path, it->index });
+                confirmed.push_back(StoredTab{ it->path, it->index, ColorKey(it->color) });
             }
             else
             {
@@ -602,7 +640,7 @@ namespace npx
             NPX_LOG(L"ReopenTab: Ctrl+Maiusc+T, nessuna scheda chiusa da riaprire.");
             return;
         }
-        m_reopening.push_back(Reopening{ chosen.path, chosen.index, GetTickCount64() });
+        m_reopening.push_back(Reopening{ chosen.path, chosen.index, GetTickCount64(), ColorFromKey(chosen.color) });
         OpenInNotepad(chosen.path);
         NPX_LOG(L"ReopenTab: riapro una scheda chiusa (%zu ancora nella cronologia).", left);
     }

@@ -1,4 +1,4 @@
-# Vertical Tabs for Notepad
+# <img src="docs/assets/icon-128.png" alt="" width="40" height="40"> Vertical Tabs for Notepad
 
 **Chrome-style vertical tabs for the Windows 11 Notepad**, plus tab colors, a "back to top" button and
 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> to reopen closed tabs.
@@ -56,7 +56,8 @@ One click scrolls back to the top and returns the keyboard to the text. Each tab
 
 ![Closing a tab and reopening it](docs/assets/notepad-reopen.gif)
 
-Like in a browser: the tab you closed by mistake comes back **in its place** and becomes the active tab.
+Like in a browser: the tab you closed by mistake comes back **in its place**, with its color, and
+becomes the active tab.
 Press again to go further back, up to the last 25 tabs. Like in Chrome, the history survives closing the
 window or Notepad.
 
@@ -123,7 +124,7 @@ Turning off the vertical tabs brings back Notepad's normal tab strip right away.
 - Everything stays in `%LOCALAPPDATA%\VTabsNotepad`:
   - `settings.ini`: the tray menu options and the column width.
   - `tab-colors.ini`: tab colors, by Notepad's internal tab id.
-  - `closed-tabs.txt`: path and position of the last 25 closed tabs (saved files only).
+  - `closed-tabs.txt`: path, position and color of the last 25 closed tabs (saved files only).
   - `logs\`: a diagnostic log, which can contain file names. Have a look before sharing it in an issue.
   - `runtime\`: a copy of the module loaded into Notepad, so the app can be updated while Notepad is open.
 

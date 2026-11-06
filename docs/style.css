@@ -500,3 +500,7 @@ footer p { max-width: 80ch; margin-top: 8px; }
   .pair { grid-template-columns: minmax(0, 1fr); gap: 0; }
   h2 { font-size: 24px; }
 }
+
+/* Icona dell'app (quella della tray su un quadrato scuro) */
+.bar-name img { width: 20px; height: 20px; vertical-align: -4px; margin-right: 10px; }
+.app-icon { display: block; width: 72px; height: 72px; margin: 0 0 28px; }
