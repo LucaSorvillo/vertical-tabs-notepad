@@ -1,0 +1,14 @@
+# Build outputs (build.ps1, Inno Setup)
+/build/
+/dist/
+
+# Visual Studio and editors
+.vs/
+.vscode/
+*.aps
+*.user
+*.suo
+
+# Crash dumps and local leftovers
+*.stackdump
+*.log

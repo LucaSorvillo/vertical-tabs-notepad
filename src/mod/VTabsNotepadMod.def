@@ -1,0 +1,4 @@
+LIBRARY VTabsNotepadMod
+EXPORTS
+    DllGetClassObject PRIVATE
+    DllCanUnloadNow PRIVATE

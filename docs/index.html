@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vertical Tabs for Notepad</title>
+<meta name="description" content="Chrome-style vertical tabs for the Windows 11 Notepad, with tab colors, a back-to-top button and Ctrl+Shift+T to reopen closed tabs. Free and open source.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Vertical Tabs for Notepad">
+<meta property="og:description" content="Chrome-style vertical tabs for the Windows 11 Notepad, with tab colors, a back-to-top button and Ctrl+Shift+T.">
+<meta property="og:url" content="https://lucasorvillo.github.io/vertical-tabs-notepad/">
+<meta property="og:image" content="https://lucasorvillo.github.io/vertical-tabs-notepad/assets/notepad-hero.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#202020" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f3f3f3" media="(prefers-color-scheme: light)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23202020'/%3E%3Crect x='5' y='6' width='13' height='5' rx='1.5' fill='%238ab4f8'/%3E%3Crect x='5' y='13.5' width='13' height='5' rx='1.5' fill='%23fff' fill-opacity='.4'/%3E%3Crect x='5' y='21' width='13' height='5' rx='1.5' fill='%23fff' fill-opacity='.4'/%3E%3Crect x='20.5' y='6' width='6.5' height='20' rx='1.5' fill='%23fff' fill-opacity='.14'/%3E%3C/svg%3E">
+<script>
+(function () {
+  var d = document.documentElement, l = null, c = null;
+  try { l = new URLSearchParams(location.search).get('lang') || localStorage.getItem('vt-lang'); c = localStorage.getItem('vt-collapsed'); } catch (e) {}
+  if (l !== 'it' && l !== 'en') l = /^it\b/i.test(navigator.language || '') ? 'it' : 'en';
+  d.lang = l; d.setAttribute('data-lang', l);
+  d.setAttribute('data-collapsed', String(window.matchMedia('(max-width: 760px)').matches || c === 'true'));
+})();
+</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#overview"><span lang="en">Skip to content</span><span lang="it">Vai al contenuto</span></a>
+<div class="app">
+
+<nav class="column" aria-label="Sections">
+  <div class="column-top">
+    <button class="icon-button collapse" type="button" aria-expanded="true" aria-controls="tabs">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M5.5 2.5v11"/><path d="M11 6 9 8l2 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="sr"><span lang="en">Collapse or expand the tabs</span><span lang="it">Comprimi o espandi le schede</span></span>
+    </button>
+  </div>
+  <ul class="tabs" id="tabs">
+    <li><a class="tab" href="#overview"><span class="tab-initial" aria-hidden="true"><span lang="en">O</span><span lang="it">P</span></span><span class="tab-label"><span lang="en">Overview</span><span lang="it">Panoramica</span></span></a></li>
+    <li><a class="tab" href="#vertical-tabs" data-color="blue"><span class="tab-initial" aria-hidden="true"><span lang="en">V</span><span lang="it">S</span></span><span class="tab-label"><span lang="en">Vertical tabs</span><span lang="it">Schede verticali</span></span></a></li>
+    <li><a class="tab" href="#tab-colors" data-color="pink"><span class="tab-initial" aria-hidden="true"><span lang="en">T</span><span lang="it">C</span></span><span class="tab-label"><span lang="en">Tab colors</span><span lang="it">Colori delle schede</span></span></a></li>
+    <li><a class="tab" href="#back-to-top" data-color="green"><span class="tab-initial" aria-hidden="true"><span lang="en">B</span><span lang="it">T</span></span><span class="tab-label"><span lang="en">Back to top</span><span lang="it">Torna su</span></span></a></li>
+    <li><a class="tab" href="#reopen" data-color="orange"><span class="tab-initial" aria-hidden="true">R</span><span class="tab-label"><span lang="en">Reopen closed tabs</span><span lang="it">Riapri le schede chiuse</span></span></a></li>
+    <li><a class="tab" href="#scrolling" data-color="cyan"><span class="tab-initial" aria-hidden="true">S</span><span class="tab-label"><span lang="en">Scrolling</span><span lang="it">Scorrimento</span></span></a></li>
+    <li><a class="tab" href="#install"><span class="tab-initial" aria-hidden="true">I</span><span class="tab-label"><span lang="en">Install</span><span lang="it">Installazione</span></span></a></li>
+    <li><a class="tab" href="#options"><span class="tab-initial" aria-hidden="true">O</span><span class="tab-label"><span lang="en">Options</span><span lang="it">Opzioni</span></span></a></li>
+    <li><a class="tab" href="#privacy"><span class="tab-initial" aria-hidden="true">P</span><span class="tab-label">Privacy</span></a></li>
+    <li><a class="tab" href="#faq"><span class="tab-initial" aria-hidden="true"><span lang="en">Q</span><span lang="it">D</span></span><span class="tab-label"><span lang="en">Questions</span><span lang="it">Domande</span></span></a></li>
+  </ul>
+  <a class="newtab" href="https://lucasorvillo.github.io/vertical-tabs-explorer/" title="Vertical Tabs for File Explorer">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true"><path d="M8 2.5v11M2.5 8h11"/></svg>
+    <span class="newtab-label"><span lang="en">File Explorer version</span><span lang="it">Versione per Esplora file</span></span>
+  </a>
+</nav>
+
+<main class="content">
+  <div class="bar">
+    <span class="bar-name">Vertical Tabs for Notepad</span>
+    <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/releases/latest">Download</a>
+    <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad">GitHub</a>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-set-lang="en" aria-pressed="true">English</button>
+      <button type="button" data-set-lang="it" aria-pressed="false">Italiano</button>
+    </div>
+  </div>
+
+  <section id="overview" class="hero">
+    <h1>Vertical Tabs for Notepad</h1>
+    <p class="lead" lang="en">Your Notepad tabs in a column on the left, like the vertical tabs in Chrome and Edge. With tab colors, a back-to-top button and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> to reopen closed tabs.</p>
+    <p class="lead" lang="it">Le schede del Blocco note in una colonna a sinistra, come le schede verticali di Chrome ed Edge. Con i colori delle schede, un pulsante "Torna su" e <kbd>Ctrl</kbd>+<kbd>Maiusc</kbd>+<kbd>T</kbd> per riaprire le schede chiuse.</p>
+    <div class="actions">
+      <a class="button primary" href="https://github.com/LucaSorvillo/vertical-tabs-notepad/releases/latest">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M4.5 6.8 8 10.3l3.5-3.5M3 13.5h10"/></svg>
+        <span lang="en">Download for Windows 11</span><span lang="it">Scarica per Windows 11</span>
+      </a>
+      <a class="button" href="https://github.com/LucaSorvillo/vertical-tabs-notepad"><span lang="en">Source code on GitHub</span><span lang="it">Codice sorgente su GitHub</span></a>
+    </div>
+    <p class="muted" lang="en">Free and open source, MIT license. Windows 11, 64-bit. Version 1.0.0.</p>
+    <p class="muted" lang="it">Gratis e open source, licenza MIT. Windows 11 a 64 bit. Versione 1.0.0.</p>
+    <figure>
+      <img class="shot" src="assets/notepad-hero.png" width="1180" height="760" alt="Notepad with its tabs in a column on the left: some tabs are tinted blue, green, orange, red and purple">
+    </figure>
+  </section>
+
+  <section id="vertical-tabs">
+    <h2 data-color="blue"><span lang="en">Vertical tabs</span><span lang="it">Schede verticali</span></h2>
+    <div class="prose">
+      <p lang="en">The tabs move into a column that starts at the top of the window. The empty title row is hidden, and the menu bar moves up next to the window buttons. Under the hood they are still Notepad's own tabs, so saving, closing and session restore work as usual.</p>
+      <p lang="it">Le schede si spostano in una colonna che parte dalla cima della finestra. La riga del titolo, rimasta vuota, si nasconde, e la barra dei menu sale accanto ai pulsanti della finestra. Sotto restano le schede del Blocco note, quindi salvataggio, chiusura e ripristino della sessione funzionano come sempre.</p>
+      <ul lang="en">
+        <li>Click to switch, middle-click or × to close, + for a new tab.</li>
+        <li>Drag a tab to reorder it: Notepad's real tabs move too.</li>
+        <li>Right-click for Notepad's own tab menu, plus <strong>Tab color</strong>.</li>
+        <li>Collapse the column to icons, or drag its edge to resize it. Width and state apply to every window.</li>
+        <li>Same font and colors as Notepad's tabs, on the Mica background, in the light and the dark theme.</li>
+      </ul>
+      <ul lang="it">
+        <li>Clic per cambiare scheda, clic centrale o × per chiudere, + per una scheda nuova.</li>
+        <li>Trascina una scheda per spostarla: si spostano anche le schede vere del Blocco note.</li>
+        <li>Clic destro per il menu della scheda del Blocco note, più <strong>Colore scheda</strong>.</li>
+        <li>Comprimi la colonna in sole icone, o trascinane il bordo per allargarla. Larghezza e stato valgono per tutte le finestre.</li>
+        <li>Lo stesso carattere e gli stessi colori delle schede del Blocco note, sullo sfondo Mica, nel tema chiaro e scuro.</li>
+      </ul>
+    </div>
+    <figure>
+      <img class="shot" src="assets/notepad-tabs.gif" width="900" height="579" loading="lazy" decoding="async" alt="Recording: clicking through three tabs, then dragging the Recipes tab above Project ideas">
+      <figcaption><span lang="en">Switching tabs, then dragging one to a new place.</span><span lang="it">Cambio di scheda, poi una scheda trascinata in un altro punto.</span></figcaption>
+    </figure>
+    <figure>
+      <img class="shot" src="assets/notepad-collapse.gif" width="900" height="579" loading="lazy" decoding="async" alt="Recording: the column collapses to icons with the initial of each tab, then expands again">
+      <figcaption><span lang="en">Collapsed, each tab is an icon with its initial, like a favicon.</span><span lang="it">Da compressa, ogni scheda è un'icona con la sua iniziale, come una favicon.</span></figcaption>
+    </figure>
+  </section>
+
+  <section id="tab-colors">
+    <h2 data-color="pink"><span lang="en">Tab colors</span><span lang="it">Colori delle schede</span></h2>
+    <div class="prose">
+      <p lang="en">Right-click a tab and pick a color: grey, blue, red, yellow, green, pink, purple, cyan or orange, the colors of Chrome's tab groups. The row gets a light tint, and the active tab a colored bar. Colors are saved and come back after Notepad restarts. The tabs on the left of this page use them too.</p>
+      <p lang="it">Clic destro su una scheda e scegli un colore: grigio, blu, rosso, giallo, verde, rosa, viola, azzurro o arancione, i colori dei gruppi di schede di Chrome. La riga prende una tinta leggera e la scheda attiva una barretta colorata. I colori si salvano e tornano dopo il riavvio del Blocco note. Li usano anche le schede a sinistra di questa pagina.</p>
+    </div>
+    <figure>
+      <img class="shot" src="assets/notepad-tab-color.png" width="1162" height="747" loading="lazy" decoding="async" alt="The tab menu of Notepad with the Tab color submenu open, listing the nine colors">
+      <figcaption><span lang="en">"Colore scheda" (Tab color) at the end of Notepad's own tab menu.</span><span lang="it">"Colore scheda" in fondo al menu della scheda del Blocco note.</span></figcaption>
+    </figure>
+  </section>
+
+  <section id="back-to-top">
+    <h2 data-color="green"><span lang="en">Back to top</span><span lang="it">Torna su</span></h2>
+    <div class="prose">
+      <p lang="en">Scroll down a document and a round button fades in at the bottom right of the editor. One click brings you back to the top, and the keyboard goes back to the text. Each tab keeps its own position.</p>
+      <p lang="it">Scorri un documento verso il basso e in basso a destra nell'editor compare sfumando un pulsante tondo. Un clic ti riporta all'inizio, e la tastiera torna al testo. Ogni scheda tiene la sua posizione.</p>
+    </div>
+    <figure>
+      <img class="shot" src="assets/notepad-back-to-top.gif" width="900" height="579" loading="lazy" decoding="async" alt="Recording: scrolling down a long document, the round button appears, one click scrolls back to the top">
+    </figure>
+  </section>
+
+  <section id="reopen">
+    <h2 data-color="orange"><span lang="en">Reopen closed tabs</span><span lang="it">Riapri le schede chiuse</span></h2>
+    <div class="prose">
+      <p lang="en">Closed a tab by mistake? Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>: it comes back in its place and becomes the active tab. Press again to go further back, up to the last 25 tabs. Like in Chrome, the history survives closing the window or Notepad.</p>
+      <p lang="it">Hai chiuso una scheda per sbaglio? Premi <kbd>Ctrl</kbd>+<kbd>Maiusc</kbd>+<kbd>T</kbd>: torna al suo posto e diventa quella attiva. Premendo di nuovo vai a ritroso, fino alle ultime 25 schede. Come in Chrome, la cronologia resta anche chiudendo la finestra o il Blocco note.</p>
+      <p lang="en">It works for saved files: only the path and the position of each tab are stored, never the content. The shortcut is taken only while a Notepad window is active, so your browser keeps it.</p>
+      <p lang="it">Vale per i file salvati: di ogni scheda si ricordano solo il percorso e la posizione, mai il contenuto. La scorciatoia si prende solo mentre è attiva una finestra del Blocco note, quindi il browser la tiene.</p>
+    </div>
+    <figure>
+      <img class="shot" src="assets/notepad-reopen.gif" width="900" height="579" loading="lazy" decoding="async" alt="Recording: the Todo tab is closed with its close button, then comes back in the same place">
+      <figcaption><span lang="en">A tab closed with × and brought back with <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>.</span><span lang="it">Una scheda chiusa con × e riportata con <kbd>Ctrl</kbd>+<kbd>Maiusc</kbd>+<kbd>T</kbd>.</span></figcaption>
+    </figure>
+  </section>
+
+  <section id="scrolling">
+    <h2 data-color="cyan"><span lang="en">Scrolling</span><span lang="it">Scorrimento</span></h2>
+    <div class="prose">
+      <ul lang="en">
+        <li><strong>No smooth scrolling.</strong> The mouse wheel moves the text right away, line by line. On by default, and you can turn it off.</li>
+        <li><strong>Scrollbars expand as soon as you hover them</strong>, without the usual short delay.</li>
+        <li><strong>Two Notepad scrollbar glitches fixed:</strong> a vertical scrollbar shown when the text fits, and scroll ranges that stay outdated until the first scroll.</li>
+      </ul>
+      <ul lang="it">
+        <li><strong>Niente scorrimento fluido.</strong> La rotella del mouse sposta il testo subito, riga per riga. Attivo all'inizio, e si può spegnere.</li>
+        <li><strong>Le barre di scorrimento si allargano appena ci passi sopra</strong>, senza il solito breve ritardo.</li>
+        <li><strong>Due difetti delle barre di scorrimento del Blocco note corretti:</strong> una barra verticale che compare anche quando il testo ci sta, e intervalli di scorrimento che restano vecchi fino al primo scorrimento.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="install">
+    <h2><span lang="en">Install</span><span lang="it">Installazione</span></h2>
+    <ol class="steps" lang="en">
+      <li>Download <code>VTabsNotepad-1.0.0-setup.exe</code> from the <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/releases/latest">latest release</a>.</li>
+      <li>Run it. No administrator rights needed: it installs for your user only, in English or Italian.</li>
+      <li>Open Notepad. The app runs in the notification area and adds the vertical tabs, also to the windows that are already open.</li>
+    </ol>
+    <ol class="steps" lang="it">
+      <li>Scarica <code>VTabsNotepad-1.0.0-setup.exe</code> dall'<a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/releases/latest">ultima release</a>.</li>
+      <li>Avvialo. Non servono diritti di amministratore: si installa solo per il tuo utente, in italiano o in inglese.</li>
+      <li>Apri il Blocco note. L'app resta nell'area di notifica e aggiunge le schede verticali, anche alle finestre già aperte.</li>
+    </ol>
+    <p class="callout" lang="en">The installer isn't code-signed, so SmartScreen may say "Windows protected your PC": choose <strong>More info</strong> › <strong>Run anyway</strong>. The app loads a module into Notepad, which some security software flags. The source code is public, and you can build it yourself.</p>
+    <p class="callout" lang="it">L'installer non ha una firma digitale, quindi SmartScreen può dire "PC protetto da Windows": scegli <strong>Ulteriori informazioni</strong> › <strong>Esegui comunque</strong>. L'app carica un modulo dentro il Blocco note, e qualche antivirus lo segnala. Il codice sorgente è pubblico, e puoi compilarlo da te.</p>
+    <h3><span lang="en">Requirements</span><span lang="it">Requisiti</span></h3>
+    <div class="prose">
+      <ul lang="en">
+        <li>Windows 11, 64-bit.</li>
+        <li>The Notepad with tabs, from the Microsoft Store.</li>
+        <li>Tested on Windows 11 26H2 (build 26300) with Notepad 11.2607. A Notepad update can break a feature: if that happens, turn it off from the tray menu.</li>
+      </ul>
+      <ul lang="it">
+        <li>Windows 11 a 64 bit.</li>
+        <li>Il Blocco note con le schede, dal Microsoft Store.</li>
+        <li>Provato su Windows 11 26H2 (build 26300) con il Blocco note 11.2607. Un aggiornamento del Blocco note può rompere una funzione: in quel caso spegnila dal menu della tray.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="options">
+    <h2><span lang="en">Options</span><span lang="it">Opzioni</span></h2>
+    <div class="prose">
+      <p lang="en">Right-click the icon in the notification area. The menu is in Italian:</p>
+      <p lang="it">Clic destro sull'icona nell'area di notifica:</p>
+    </div>
+    <figure>
+      <img class="shot small" src="assets/notepad-tray-menu.png" width="392" height="247" loading="lazy" decoding="async" alt="The tray menu of the app, with the options listed below">
+    </figure>
+    <div class="table-wrap">
+      <table lang="en">
+        <thead><tr><th scope="col">Menu item</th><th scope="col">Meaning</th><th scope="col">Default</th></tr></thead>
+        <tbody>
+          <tr><td>Schede verticali</td><td>Vertical tabs</td><td>On</td></tr>
+          <tr><td>Pulsante «Torna su»</td><td>Back-to-top button</td><td>On</td></tr>
+          <tr><td>Riapri la scheda chiusa con Ctrl+Maiusc+T</td><td>Reopen closed tabs with Ctrl+Shift+T</td><td>On</td></tr>
+          <tr><td>Disattiva lo scorrimento fluido</td><td>Turn off smooth scrolling</td><td>On</td></tr>
+          <tr><td>Avvia con Windows</td><td>Start with Windows</td><td>Chosen in the setup</td></tr>
+          <tr><td>Apri cartella impostazioni e log</td><td>Open the settings and log folder</td><td></td></tr>
+          <tr><td>Esporta albero XAML (diagnostica)</td><td>Export Notepad's interface tree, for bug reports</td><td></td></tr>
+          <tr><td>Esci</td><td>Exit</td><td></td></tr>
+        </tbody>
+      </table>
+      <table lang="it">
+        <thead><tr><th scope="col">Voce del menu</th><th scope="col">Predefinito</th></tr></thead>
+        <tbody>
+          <tr><td>Schede verticali</td><td>Attiva</td></tr>
+          <tr><td>Pulsante «Torna su»</td><td>Attiva</td></tr>
+          <tr><td>Riapri la scheda chiusa con Ctrl+Maiusc+T</td><td>Attiva</td></tr>
+          <tr><td>Disattiva lo scorrimento fluido</td><td>Attiva</td></tr>
+          <tr><td>Avvia con Windows</td><td>Come scelto nell'installazione</td></tr>
+          <tr><td>Apri cartella impostazioni e log</td><td></td></tr>
+          <tr><td>Esporta albero XAML (diagnostica)</td><td></td></tr>
+          <tr><td>Esci</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="privacy">
+    <h2>Privacy</h2>
+    <div class="prose">
+      <ul lang="en">
+        <li>The app works offline: no network access, no telemetry, no account.</li>
+        <li>It never reads or stores what you write.</li>
+        <li>It keeps a few small files in <code>%LOCALAPPDATA%\VTabsNotepad</code>: the options, the tab colors, the paths of the last 25 closed tabs and a diagnostic log. The log can contain file names: have a look before sharing it.</li>
+      </ul>
+      <ul lang="it">
+        <li>L'app funziona offline: niente rete, niente telemetria, nessun account.</li>
+        <li>Non legge e non salva mai quello che scrivi.</li>
+        <li>Tiene pochi file piccoli in <code>%LOCALAPPDATA%\VTabsNotepad</code>: le opzioni, i colori delle schede, i percorsi delle ultime 25 schede chiuse e un registro diagnostico. Il registro può contenere nomi di file: controllalo prima di condividerlo.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="faq">
+    <h2><span lang="en">Questions</span><span lang="it">Domande</span></h2>
+    <div class="faq" lang="en">
+      <details><summary>Does it change Notepad?</summary><div><p>No. Nothing changes on disk: while the app runs, it loads a module into Notepad. Uninstall it, restart Notepad, and Notepad is exactly as before.</p></div></details>
+      <details><summary>Why do Windows or my antivirus warn me?</summary><div><p>The installer isn't signed yet, and loading a module into another app is something security tools watch closely. The code is open: you can read it and build it yourself.</p></div></details>
+      <details><summary>Notepad updated and something looks wrong.</summary><div><p>Notepad's interface can change with an update. Turn the feature off from the tray menu, and <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/issues">open an issue</a> with your Notepad version (in Notepad: Settings › About this app).</p></div></details>
+      <details><summary>Why is the app's menu in Italian?</summary><div><p>The app was born in Italian. The website and the documentation are in English and Italian.</p></div></details>
+      <details><summary>Does it work on Windows 10?</summary><div><p>No. It needs the Notepad with tabs of Windows 11.</p></div></details>
+      <details><summary>How do I uninstall it?</summary><div><p><strong>Settings</strong> › <strong>Apps</strong> › <strong>Installed apps</strong> › <strong>Vertical Tabs for Notepad</strong> › <strong>Uninstall</strong>. The uninstaller asks whether to delete your settings too. Open Notepad windows keep the vertical tabs until Notepad is closed.</p></div></details>
+    </div>
+    <div class="faq" lang="it">
+      <details><summary>Modifica il Blocco note?</summary><div><p>No. Su disco non cambia niente: mentre l'app è aperta, carica un modulo dentro il Blocco note. Disinstallala, riavvia il Blocco note, ed è esattamente come prima.</p></div></details>
+      <details><summary>Perché Windows o l'antivirus mi avvisano?</summary><div><p>L'installer non ha ancora una firma digitale, e caricare un modulo dentro un'altra app è una cosa che i programmi di sicurezza tengono d'occhio. Il codice è aperto: puoi leggerlo e compilarlo da te.</p></div></details>
+      <details><summary>Il Blocco note si è aggiornato e qualcosa non va.</summary><div><p>Un aggiornamento può cambiare l'interfaccia del Blocco note. Spegni la funzione dal menu della tray e <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/issues">apri una segnalazione</a> con la versione del Blocco note (nel Blocco note: Impostazioni › Informazioni su questa app).</p></div></details>
+      <details><summary>Perché il menu dell'app è in italiano?</summary><div><p>L'app è nata in italiano. Il sito e la documentazione sono in italiano e in inglese.</p></div></details>
+      <details><summary>Funziona su Windows 10?</summary><div><p>No. Serve il Blocco note con le schede di Windows 11.</p></div></details>
+      <details><summary>Come si disinstalla?</summary><div><p><strong>Impostazioni</strong> › <strong>App</strong> › <strong>App installate</strong> › <strong>Vertical Tabs for Notepad</strong> › <strong>Disinstalla</strong>. La disinstallazione chiede se eliminare anche le impostazioni. Le finestre del Blocco note aperte tengono le schede verticali finché il Blocco note non viene chiuso.</p></div></details>
+    </div>
+  </section>
+
+  <footer>
+    <p lang="en"><a href="https://github.com/LucaSorvillo/vertical-tabs-notepad">Source code</a>, <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/releases">releases</a>, <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/blob/main/CHANGELOG.md">changelog</a>, <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/blob/main/ARCHITECTURE.md">how it works</a>, <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/issues">report a problem</a>.</p>
+    <p lang="it"><a href="https://github.com/LucaSorvillo/vertical-tabs-notepad">Codice sorgente</a>, <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/releases">release</a>, <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/blob/main/CHANGELOG.md">novità</a>, <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/blob/main/DESIGN-NOTES.it.md">come funziona</a>, <a href="https://github.com/LucaSorvillo/vertical-tabs-notepad/issues">segnala un problema</a>.</p>
+    <p lang="en">Vertical Tabs for Notepad is free software under the MIT license. It isn't affiliated with or endorsed by Microsoft. Windows and Notepad are trademarks of Microsoft Corporation.</p>
+    <p lang="it">Vertical Tabs for Notepad è software libero con licenza MIT. Non è affiliato a Microsoft né approvato da Microsoft. Windows e Blocco note sono marchi di Microsoft Corporation.</p>
+  </footer>
+</main>
+</div>
+<script src="site.js"></script>
+</body>
+</html>
