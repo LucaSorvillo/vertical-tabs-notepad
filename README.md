@@ -14,8 +14,8 @@ Under the hood they are still Notepad's own tabs, menus and commands, so saving,
 keep working as usual.
 
 > [!NOTE]
-> The app's own texts (tray menu, the "Tab color" menu) are in Italian for now. The screenshots show an
-> Italian Windows.
+> The app speaks the language of Windows: Italian if the Windows display language is Italian, English
+> otherwise. The setup does the same.
 
 ## Features
 
@@ -85,7 +85,7 @@ it.
 1. Download `VTabsNotepad-<version>-setup.exe` from the
    [latest release](https://github.com/LucaSorvillo/vertical-tabs-notepad/releases/latest).
 2. Run it. No administrator rights are needed: it installs into `%LOCALAPPDATA%\Programs\VTabsNotepad`.
-   The setup is in English or Italian.
+   Like the app, the setup follows the Windows language (Italian or English).
 3. The app starts in the notification area (tray) and adds the vertical tabs to Notepad, including windows
    that are already open.
 
@@ -96,20 +96,23 @@ it.
 
 ## Usage
 
-Everything is in the tray menu (right-click the icon). The items are in Italian:
+Everything is in the tray menu (right-click the icon):
 
 ![Tray menu](docs/assets/notepad-tray-menu.png)
 
-| Menu item | Meaning | Default |
-| --- | --- | --- |
-| Schede verticali | Vertical tabs | on |
-| Pulsante «Torna su» | Back-to-top button | on |
-| Riapri la scheda chiusa con Ctrl+Maiusc+T | Reopen closed tabs with Ctrl+Shift+T | on |
-| Disattiva lo scorrimento fluido | Turn off smooth scrolling | on |
-| Avvia con Windows | Start with Windows | as chosen in the setup |
-| Apri cartella impostazioni e log | Open the settings and log folder | |
-| Esporta albero XAML (diagnostica) | Export Notepad's XAML tree, for troubleshooting | |
-| Esci | Exit | |
+| Menu item | Default |
+| --- | --- |
+| Vertical tabs | on |
+| Back-to-top button | on |
+| Reopen closed tabs with Ctrl+Shift+T | on |
+| Turn off smooth scrolling | on |
+| Start with Windows | as chosen in the setup |
+| Open settings and log folder | |
+| Export XAML tree (diagnostics) | |
+| Exit | |
+
+**Export XAML tree** saves the structure of Notepad's interface to the log folder: useful when you report a
+problem after a Notepad update.
 
 Turning off the vertical tabs brings back Notepad's normal tab strip right away.
 
@@ -173,7 +176,6 @@ that are open keep the vertical tabs until Notepad is closed.
 - The app depends on how Notepad's interface is built inside. An update of Notepad can change it. If something
   looks wrong, turn the feature off from the tray menu, and please
   [open an issue](https://github.com/LucaSorvillo/vertical-tabs-notepad/issues) with your Notepad version.
-- The app's texts are in Italian.
 - x64 only.
 
 ## Related

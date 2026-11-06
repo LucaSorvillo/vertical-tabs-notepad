@@ -244,7 +244,8 @@ namespace
         data.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_SHOWTIP;
         data.uCallbackMessage = WM_TRAY;
         data.hIcon = icon;
-        wcscpy_s(data.szTip, IsDevModeActive() ? L"VTabsNotepad - modalità sviluppo attiva" : L"VTabsNotepad - Blocco note con schede verticali");
+        wcscpy_s(data.szTip, IsDevModeActive() ? npx::Tr(L"VTabsNotepad - dev mode on", L"VTabsNotepad - modalità sviluppo attiva")
+                                           : npx::Tr(L"VTabsNotepad - Notepad with vertical tabs", L"VTabsNotepad - Blocco note con schede verticali"));
         Shell_NotifyIconW(message, &data);
         if (message == NIM_ADD)
         {
@@ -272,21 +273,21 @@ namespace
         const npx::Settings settings = npx::Settings::Load();
 
         HMENU menu = CreatePopupMenu();
-        AppendMenuW(menu, MF_STRING | (settings.verticalTabs ? MF_CHECKED : 0), IdVerticalTabs, L"Schede verticali");
+        AppendMenuW(menu, MF_STRING | (settings.verticalTabs ? MF_CHECKED : 0), IdVerticalTabs, npx::Tr(L"Vertical tabs", L"Schede verticali"));
         AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-        AppendMenuW(menu, MF_STRING | (settings.backToTop ? MF_CHECKED : 0), IdBackToTop, L"Pulsante «Torna su»");
-        AppendMenuW(menu, MF_STRING | (settings.reopenTab ? MF_CHECKED : 0), IdReopenTab, L"Riapri la scheda chiusa con Ctrl+Maiusc+T");
-        AppendMenuW(menu, MF_STRING | (settings.noSmoothScroll ? MF_CHECKED : 0), IdNoSmoothScroll, L"Disattiva lo scorrimento fluido");
+        AppendMenuW(menu, MF_STRING | (settings.backToTop ? MF_CHECKED : 0), IdBackToTop, npx::Tr(L"Back-to-top button", L"Pulsante «Torna su»"));
+        AppendMenuW(menu, MF_STRING | (settings.reopenTab ? MF_CHECKED : 0), IdReopenTab, npx::Tr(L"Reopen closed tabs with Ctrl+Shift+T", L"Riapri la scheda chiusa con Ctrl+Maiusc+T"));
+        AppendMenuW(menu, MF_STRING | (settings.noSmoothScroll ? MF_CHECKED : 0), IdNoSmoothScroll, npx::Tr(L"Turn off smooth scrolling", L"Disattiva lo scorrimento fluido"));
         AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-        AppendMenuW(menu, MF_STRING | (IsAutostartEnabled() ? MF_CHECKED : 0), IdAutostart, L"Avvia con Windows");
-        AppendMenuW(menu, MF_STRING, IdOpenData, L"Apri cartella impostazioni e log");
-        AppendMenuW(menu, MF_STRING, IdDumpTree, L"Esporta albero XAML (diagnostica)");
+        AppendMenuW(menu, MF_STRING | (IsAutostartEnabled() ? MF_CHECKED : 0), IdAutostart, npx::Tr(L"Start with Windows", L"Avvia con Windows"));
+        AppendMenuW(menu, MF_STRING, IdOpenData, npx::Tr(L"Open settings and log folder", L"Apri cartella impostazioni e log"));
+        AppendMenuW(menu, MF_STRING, IdDumpTree, npx::Tr(L"Export XAML tree (diagnostics)", L"Esporta albero XAML (diagnostica)"));
         if (IsDevModeActive())
         {
-            AppendMenuW(menu, MF_STRING, IdDevMode, L"Disattiva modalità sviluppo (solo finestre di prova)");
+            AppendMenuW(menu, MF_STRING, IdDevMode, npx::Tr(L"Turn off dev mode (test windows only)", L"Disattiva modalità sviluppo (solo finestre di prova)"));
         }
         AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-        AppendMenuW(menu, MF_STRING, IdExit, L"Esci");
+        AppendMenuW(menu, MF_STRING, IdExit, npx::Tr(L"Exit", L"Esci"));
 
         // Necessario perché il menu si chiuda cliccando altrove.
         SetForegroundWindow(hwnd);

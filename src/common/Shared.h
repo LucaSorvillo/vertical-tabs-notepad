@@ -12,6 +12,20 @@ namespace npx
     inline constexpr wchar_t kAppName[] = L"VTabsNotepad";
     inline constexpr wchar_t kModDllName[] = L"VTabsNotepadMod.dll";
 
+    // Lingua dei testi dell'app (menu della tray, menu e suggerimenti della mod): l'italiano se la lingua di
+    // visualizzazione di Windows dell'utente è l'italiano, altrimenti l'inglese. Si legge una volta per
+    // processo: cambiare la lingua di Windows richiede di disconnettersi.
+    inline bool UiItalian()
+    {
+        static const bool italian = PRIMARYLANGID(GetUserDefaultUILanguage()) == LANG_ITALIAN;
+        return italian;
+    }
+    // Il testo nella lingua dell'app.
+    inline const wchar_t* Tr(const wchar_t* english, const wchar_t* italian)
+    {
+        return UiItalian() ? italian : english;
+    }
+
     // CLSID del TAP (Tool Access Point) che il runtime XAML istanzia dentro Notepad
     // quando chiamiamo InitializeXamlDiagnosticsEx.
     // {FF5B52B0-369E-4523-8ACA-EACA3766DD29}

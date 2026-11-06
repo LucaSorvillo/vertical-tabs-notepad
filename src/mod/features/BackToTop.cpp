@@ -174,7 +174,16 @@ namespace npx
         }
         try
         {
-            m_root = mux::Markup::XamlReader::Load(kButtonXaml).as<muxc::Grid>();
+            std::wstring xaml{ kButtonXaml };
+            if (!UiItalian())
+            {
+                // Il markup è in italiano: suggerimento e nome per l'accessibilità in inglese
+                for (size_t at = xaml.find(L"=\"Torna su\""); at != std::wstring::npos; at = xaml.find(L"=\"Torna su\"", at))
+                {
+                    xaml.replace(at, 11, L"=\"Back to top\"");
+                }
+            }
+            m_root = mux::Markup::XamlReader::Load(xaml).as<muxc::Grid>();
             m_button = m_root.FindName(L"TopButton").as<muxc::Button>();
             const std::weak_ptr<BackToTop> weak = weak_from_this();
             m_button.Click([weak](auto&&, auto&&) {

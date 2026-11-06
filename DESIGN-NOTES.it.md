@@ -816,4 +816,14 @@ Dal menu della tray: "Schede verticali" (on/off) oppure "Esci". Per rimuovere tu
 tray, togliere "Avvia con Windows" se attivato, cancellare `%LOCALAPPDATA%\VTabsNotepad` e la cartella
 del progetto. Il Blocco note non viene mai modificato su disco.
 
-Software personale, non affiliato a Microsoft.
+## Lingua dei testi (dalla 1.1.0)
+
+I testi per l'utente (menu della tray, menu "Colore scheda" e nomi dei colori, suggerimenti, nomi per
+l'accessibilità) esistono in italiano e in inglese. `UiItalian()` in `Shared.h` legge `GetUserDefaultUILanguage()`
+una volta per processo: italiano se la lingua di visualizzazione di Windows è l'italiano, altrimenti inglese
+(cambiarla richiede di disconnettersi). `Tr(inglese, italiano)` sceglie il testo. Il markup XAML resta scritto in
+italiano: in inglese i valori degli attributi per l'utente si sostituiscono prima di `XamlReader::Load`. I log
+restano in italiano. L'installazione sceglie la lingua allo stesso modo (Inno Setup, `ShowLanguageDialog=no`). Il
+kit delle prove cerca gli elementi con `UiName 'inglese' 'italiano'`.
+
+Non affiliato a Microsoft.

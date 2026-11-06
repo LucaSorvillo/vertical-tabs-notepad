@@ -20,15 +20,15 @@ namespace npx::tabcolors
 
         // Toni chiari per il tema scuro e saturi per il tema chiaro, come i gruppi di schede di Chrome.
         constexpr Swatch kPalette[] = {
-            { TabColor::Grey, L"grey", L"Grigio", Rgb(0x5F6368), Rgb(0xBDC1C6), kWhite, kInk },
-            { TabColor::Blue, L"blue", L"Blu", Rgb(0x1A73E8), Rgb(0x8AB4F8), kWhite, kInk },
-            { TabColor::Red, L"red", L"Rosso", Rgb(0xD93025), Rgb(0xF28B82), kWhite, kInk },
-            { TabColor::Yellow, L"yellow", L"Giallo", Rgb(0xF9AB00), Rgb(0xFDD663), kInk, kInk },
-            { TabColor::Green, L"green", L"Verde", Rgb(0x188038), Rgb(0x81C995), kWhite, kInk },
-            { TabColor::Pink, L"pink", L"Rosa", Rgb(0xD01884), Rgb(0xFF8BCB), kWhite, kInk },
-            { TabColor::Purple, L"purple", L"Viola", Rgb(0x9334E6), Rgb(0xC58AF9), kWhite, kInk },
-            { TabColor::Cyan, L"cyan", L"Azzurro", Rgb(0x007B83), Rgb(0x78D9EC), kWhite, kInk },
-            { TabColor::Orange, L"orange", L"Arancione", Rgb(0xFA903E), Rgb(0xFCAD70), kInk, kInk },
+            { TabColor::Grey, L"grey", L"Grey", L"Grigio", Rgb(0x5F6368), Rgb(0xBDC1C6), kWhite, kInk },
+            { TabColor::Blue, L"blue", L"Blue", L"Blu", Rgb(0x1A73E8), Rgb(0x8AB4F8), kWhite, kInk },
+            { TabColor::Red, L"red", L"Red", L"Rosso", Rgb(0xD93025), Rgb(0xF28B82), kWhite, kInk },
+            { TabColor::Yellow, L"yellow", L"Yellow", L"Giallo", Rgb(0xF9AB00), Rgb(0xFDD663), kInk, kInk },
+            { TabColor::Green, L"green", L"Green", L"Verde", Rgb(0x188038), Rgb(0x81C995), kWhite, kInk },
+            { TabColor::Pink, L"pink", L"Pink", L"Rosa", Rgb(0xD01884), Rgb(0xFF8BCB), kWhite, kInk },
+            { TabColor::Purple, L"purple", L"Purple", L"Viola", Rgb(0x9334E6), Rgb(0xC58AF9), kWhite, kInk },
+            { TabColor::Cyan, L"cyan", L"Cyan", L"Azzurro", Rgb(0x007B83), Rgb(0x78D9EC), kWhite, kInk },
+            { TabColor::Orange, L"orange", L"Orange", L"Arancione", Rgb(0xFA903E), Rgb(0xFCAD70), kInk, kInk },
         };
 
         constexpr wchar_t kSection[] = L"Colors";

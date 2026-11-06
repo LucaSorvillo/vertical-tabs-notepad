@@ -26,6 +26,9 @@ $NpxTestDir = Join-Path $env:TEMP 'npx-test'
 $NpxTestPrefix = 'npx-test-'
 $NpxLocalState = Join-Path $env:LOCALAPPDATA 'Packages\Microsoft.WindowsNotepad_8wekyb3d8bbwe\LocalState'
 $NpxUiaTool = Join-Path $NpxRepo 'build\test\VTabsNotepadUiaTool.exe'
+# Nomi dell'interfaccia nella lingua di Windows, la stessa del Blocco note e della mod: italiano, altrimenti inglese.
+$NpxItalian = [Globalization.CultureInfo]::CurrentUICulture.TwoLetterISOLanguageName -eq 'it'
+function UiName([string]$English, [string]$Italian) { if ($NpxItalian) { $Italian } else { $English } }
 
 if (-not ('NpxKit' -as [type])) {
     Add-Type -Namespace '' -Name NpxKit -MemberDefinition @'
@@ -105,7 +108,7 @@ function Test-Selected($Element) { $Element.GetCurrentPattern([Windows.Automatio
 function Get-NativeTabs([int64]$Hwnd) {
     @((Win $Hwnd).FindAll($TS::Descendants, (New-Object Windows.Automation.PropertyCondition($AE::ControlTypeProperty, $CT::TabItem))))
 }
-function Get-PanelList([int64]$Hwnd) { Find-ByName (Win $Hwnd) 'Schede' }
+function Get-PanelList([int64]$Hwnd) { Find-ByName (Win $Hwnd) (UiName 'Tabs' 'Schede') }
 function Get-PanelRows([int64]$Hwnd) {
     $list = Get-PanelList $Hwnd
     if (-not $list) { return @() }
@@ -114,7 +117,7 @@ function Get-PanelRows([int64]$Hwnd) {
 # Titolo stampabile: solo i nostri file di prova; il resto diventa un segnaposto
 function Safe-Name([string]$Name) {
     if ($Name.StartsWith($NpxTestPrefix)) { return ($Name -split '\.')[0] }
-    if ($Name.StartsWith('Senza titolo')) { return 'Senza titolo' }
+    if ($Name.StartsWith('Senza titolo') -or $Name.StartsWith('Untitled')) { return (UiName 'Untitled' 'Senza titolo') }
     return '<altra>'
 }
 function Get-NativeOrder([int64]$Hwnd) { @(Get-NativeTabs $Hwnd | ForEach-Object { Safe-Name $_.Current.Name }) }
@@ -276,7 +279,7 @@ function Get-EditorSurface([int64]$Hwnd) {
 function Enable-WordWrap([int64]$Hwnd) {
     for ($i = 0; $i -lt 2; $i++) {
         if (@(Get-EditorTextRects $Hwnd).Count -gt 1) { return $true }
-        $view = Find-Control $Hwnd 'Visualizza' $CT::MenuItem
+        $view = Find-Control $Hwnd (UiName 'View' 'Visualizza') $CT::MenuItem
         $view.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
         Start-Sleep -Milliseconds 600
         $item = Get-MenuItems | Where-Object { $_.Current.Name -eq 'A capo automatico' } | Select-Object -First 1
@@ -544,7 +547,7 @@ function Measure-WheelSteps([int64]$Hwnd, [int]$Delta = -120, [int]$Keys = 0) {
 }
 # Accende/spegne "A capo automatico" (menu Visualizza; nel Blocco note vale per scheda)
 function Switch-WordWrap([int64]$Hwnd) {
-    $view = Find-Control $Hwnd 'Visualizza' $CT::MenuItem
+    $view = Find-Control $Hwnd (UiName 'View' 'Visualizza') $CT::MenuItem
     $view.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
     Start-Sleep -Milliseconds 600
     $item = Get-MenuItems | Where-Object { $_.Current.Name -eq 'A capo automatico' } | Select-Object -First 1
@@ -581,7 +584,7 @@ function Close-PanelTab([int64]$Hwnd, [string]$Prefix, [switch]$NoWait) {
     Select-Element (Find-PanelRow $Hwnd $Prefix)
     $deadline = (Get-Date).AddSeconds(4)
     while ((Get-SelectedPanel $Hwnd) -ne $name -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 200 }
-    Invoke-Element (Find-ByName (Find-PanelRow $Hwnd $Prefix) 'Chiudi scheda') # X della riga attiva
+    Invoke-Element (Find-ByName (Find-PanelRow $Hwnd $Prefix) (UiName 'Close tab' 'Chiudi scheda')) # X della riga attiva
     $deadline = (Get-Date).AddSeconds(6)
     while ((Get-PanelOrder $Hwnd) -contains $name -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 100 }
     if (-not $NoWait) { Start-Sleep -Milliseconds 1200 } # la mod conferma la chiusura (non era un riordino)
@@ -658,7 +661,7 @@ function Invoke-MenuCommand([int64]$Hwnd, [string]$Menu, [string]$Command) {
 }
 # Apre un file in una finestra precisa: File > Apri, nome nel dialogo (WM_SETTEXT) e IDOK (WM_COMMAND)
 function Open-FileInWindow([int64]$Hwnd, [string]$Path) {
-    Invoke-MenuCommand $Hwnd 'File' 'Apri'
+    Invoke-MenuCommand $Hwnd 'File' (UiName 'Open' 'Apri')
     $deadline = (Get-Date).AddSeconds(15)
     do { Start-Sleep -Milliseconds 300; $dlg = Get-TopWindows '#32770' | Select-Object -First 1 } while (-not $dlg -and (Get-Date) -lt $deadline)
     if (-not $dlg) { throw 'Finestra Apri non comparsa' }
@@ -867,8 +870,8 @@ function New-TestWindow([int]$Files = 5, [scriptblock]$OnCreated = $null) {
     if ($iconic) { [NpxKit]::ShowWindow([IntPtr]$before[0], 4) | Out-Null; Start-Sleep -Milliseconds 1500 } # SW_SHOWNOACTIVATE
     try {
         # Appena riaperta da ridotta a icona la finestra a volte non mostra ancora le voci del menu: secondo tentativo
-        try { Invoke-MenuCommand $before[0] 'File' 'Nuova finestra' }
-        catch { Start-Sleep -Milliseconds 1200; Invoke-MenuCommand $before[0] 'File' 'Nuova finestra' }
+        try { Invoke-MenuCommand $before[0] 'File' (UiName 'New window' 'Nuova finestra') }
+        catch { Start-Sleep -Milliseconds 1200; Invoke-MenuCommand $before[0] 'File' (UiName 'New window' 'Nuova finestra') }
         $deadline = (Get-Date).AddSeconds(10)
         do { Start-Sleep -Milliseconds 400; $new = @(Get-NpWindows | Where-Object { $before -notcontains (Get-Hwnd $_) }) } while ($new.Count -lt 1 -and (Get-Date) -lt $deadline)
     }
@@ -1018,7 +1021,7 @@ function Get-ScreenRow([int]$X, [int]$Y, [int]$Width) {
 # Colore di fondo della barra dei menu: il più frequente lungo la sua riga, dalla fine dei menu al centro
 # della finestra (niente scritte né pulsanti)
 function Get-MenuBarColor([int64]$Hwnd) {
-    $view = Find-Control $Hwnd 'Visualizza' $CT::MenuItem
+    $view = Find-Control $Hwnd (UiName 'View' 'Visualizza') $CT::MenuItem
     if (-not $view) { return $null }
     $b = $view.Current.BoundingRectangle
     $wr = Get-WinRect $Hwnd

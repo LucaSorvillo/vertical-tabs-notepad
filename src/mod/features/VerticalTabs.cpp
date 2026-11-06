@@ -193,9 +193,34 @@ namespace npx
             bool m_previous;
         };
 
+        // Il markup è scritto in italiano: con l'app in inglese se ne traducono i testi per l'utente (nomi per
+        // l'accessibilità e suggerimenti), cercando gli attributi esatti.
+        std::wstring Localized(std::wstring xaml)
+        {
+            if (UiItalian())
+            {
+                return xaml;
+            }
+            static constexpr std::pair<std::wstring_view, std::wstring_view> kEnglish[] = {
+                { LR"(="Comprimi schede")", LR"(="Collapse tabs")" },
+                { LR"(AutomationProperties.Name="Schede")", LR"(AutomationProperties.Name="Tabs")" },
+                { LR"(="Nuova scheda")", LR"(="New tab")" },
+                { LR"(="Larghezza pannello schede")", LR"(="Tab panel width")" },
+                { LR"(="Chiudi scheda")", LR"(="Close tab")" },
+            };
+            for (auto const& [italian, english] : kEnglish)
+            {
+                for (size_t at = xaml.find(italian); at != std::wstring::npos; at = xaml.find(italian, at + english.size()))
+                {
+                    xaml.replace(at, italian.size(), english);
+                }
+            }
+            return xaml;
+        }
+
         mux::FrameworkElement LoadXaml(std::wstring const& xaml)
         {
-            return mux::Markup::XamlReader::Load(xaml).as<mux::FrameworkElement>();
+            return mux::Markup::XamlReader::Load(Localized(xaml)).as<mux::FrameworkElement>();
         }
 
         template <typename T>
@@ -1341,7 +1366,7 @@ namespace npx
         m_header.HorizontalAlignment(compact ? mux::HorizontalAlignment::Center : mux::HorizontalAlignment::Stretch);
         ApplyHeaderLayout(compact);
         m_toggleIcon.Glyph(compact ? L"\xEA5B" : L"\xEA49"); // Segoe Fluent Icons: pannello con la barra a sinistra, che si apre o si chiude
-        const winrt::hstring toggleName = compact ? L"Espandi schede" : L"Comprimi schede";
+        const winrt::hstring toggleName = compact ? Tr(L"Expand tabs", L"Espandi schede") : Tr(L"Collapse tabs", L"Comprimi schede");
         mux::Automation::AutomationProperties::SetName(m_toggle, toggleName);
         muxc::ToolTipService::SetToolTip(m_toggle, winrt::box_value(toggleName));
 
@@ -2153,7 +2178,7 @@ namespace npx
         }
         row.avatarColor.Visibility(swatch ? mux::Visibility::Visible : mux::Visibility::Collapsed);
         row.avatarNeutral.Visibility(swatch ? mux::Visibility::Collapsed : mux::Visibility::Visible);
-        mux::Automation::AutomationProperties::SetItemStatus(row.element, swatch ? winrt::hstring{ L"Colore: " } + swatch->displayName : winrt::hstring{});
+        mux::Automation::AutomationProperties::SetItemStatus(row.element, swatch ? winrt::hstring{ Tr(L"Color: ", L"Colore: ") } + swatch->DisplayName() : winrt::hstring{});
 
         // Fondo della riga: tinta tenue del colore della scheda (o velo neutro), semitrasparente sotto il
         // contenuto, così il passaggio del mouse disegnato sotto resta visibile. La scheda attiva ha la
@@ -2807,7 +2832,7 @@ namespace npx
             const std::weak_ptr<VerticalTabs> weak = weak_from_this();
 
             muxc::MenuFlyoutSubItem colors;
-            colors.Text(L"Colore scheda");
+            colors.Text(Tr(L"Tab color", L"Colore scheda"));
             muxc::FontIcon colorsIcon;
             colorsIcon.Glyph(L""); // tavolozza
             colors.Icon(colorsIcon);
@@ -2832,10 +2857,10 @@ namespace npx
                 });
                 colors.Items().Append(item);
             };
-            addItem(tabcolors::TabColor::None, L"Nessuno", std::nullopt);
+            addItem(tabcolors::TabColor::None, Tr(L"None", L"Nessuno"), std::nullopt);
             for (auto const& swatch : tabcolors::Palette())
             {
-                addItem(swatch.color, swatch.displayName, dark ? swatch.fillDark : swatch.fillLight);
+                addItem(swatch.color, swatch.DisplayName(), dark ? swatch.fillDark : swatch.fillLight);
             }
 
             muxc::MenuFlyoutSeparator separator;

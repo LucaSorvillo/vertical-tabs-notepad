@@ -94,6 +94,16 @@ to `TabsBar`, `TabItemViewModel` and their commands (`ReorderTab`, `SelectTabByT
   layout. A new build takes effect when Notepad restarts.
 - `TreeDump.cpp` exports the XAML tree (tray menu › "Esporta albero XAML") to diagnose a Notepad update.
 
+## Languages
+
+The texts the user sees (tray menu, the "Tab color" menu and the color names, tooltips, accessibility names) exist
+in English and Italian. `UiItalian()` in `Shared.h` reads `GetUserDefaultUILanguage()` once per process: Italian if
+the Windows display language is Italian, English otherwise (changing it requires signing out). `Tr(english,
+italian)` picks the text. The XAML markup is written in Italian; in English, the user-facing attribute values are
+replaced before `XamlReader::Load`. Logs stay in Italian. The installer chooses its language the same way (Inno
+Setup detects the UI language; `ShowLanguageDialog=no`, English first). The test kit finds elements with
+`UiName 'english' 'italian'`.
+
 ## Data files
 
 All in `%LOCALAPPDATA%\VTabsNotepad`: `settings.ini`, `tab-colors.ini`, `closed-tabs.txt`, `logs\`,

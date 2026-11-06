@@ -14,7 +14,8 @@ sinistra. Sotto restano le schede, i menu e i comandi del Blocco note, quindi sa
 ripristino della sessione funzionano come sempre.
 
 > [!NOTE]
-> I testi dell'app (menu della tray, menu "Colore scheda") per ora sono in italiano.
+> L'app parla la lingua di Windows: italiano se la lingua di visualizzazione di Windows è l'italiano,
+> altrimenti inglese. Lo stesso vale per l'installazione. Gli screenshot mostrano Windows in inglese.
 
 ## Funzioni
 
@@ -84,7 +85,7 @@ programmi (il browser, per esempio).
 
 1. Scarica `VTabsNotepad-<versione>-setup.exe` dall'[ultima release](https://github.com/LucaSorvillo/vertical-tabs-notepad/releases/latest).
 2. Avvialo. Non servono diritti di amministratore: si installa in `%LOCALAPPDATA%\Programs\VTabsNotepad`.
-   L'installazione è in italiano o in inglese.
+   Come l'app, l'installazione segue la lingua di Windows (italiano o inglese).
 3. L'app parte nell'area di notifica (tray) e aggiunge le schede verticali al Blocco note, anche alle finestre
    già aperte.
 
@@ -107,8 +108,12 @@ Tutto è nel menu della tray (clic destro sull'icona):
 | Disattiva lo scorrimento fluido | attiva |
 | Avvia con Windows | come scelto nell'installazione |
 | Apri cartella impostazioni e log | |
-| Esporta albero XAML (diagnostica) | l'albero dell'interfaccia del Blocco note, per le segnalazioni |
+| Esporta albero XAML (diagnostica) | |
 | Esci | |
+
+Con Windows in un'altra lingua le voci sono in inglese, come nell'immagine. **Esporta albero XAML** salva la
+struttura dell'interfaccia del Blocco note nella cartella dei log: utile per segnalare un problema dopo un
+aggiornamento del Blocco note.
 
 Spegnendo le schede verticali torna subito la normale barra delle schede del Blocco note.
 
@@ -178,7 +183,6 @@ del Blocco note già aperte tengono le schede verticali finché il Blocco note n
   qualcosa non va, spegni la funzione dal menu della tray e
   [apri una segnalazione](https://github.com/LucaSorvillo/vertical-tabs-notepad/issues) indicando la versione
   del Blocco note.
-- I testi dell'app sono in italiano.
 - Solo x64.
 
 ## Vedi anche

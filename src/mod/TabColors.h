@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Shared.h"
+
 namespace npx::tabcolors
 {
     // Colori assegnabili alle schede (gli stessi dei gruppi di schede di Chrome).
@@ -21,11 +23,15 @@ namespace npx::tabcolors
     {
         TabColor color;
         const wchar_t* key;         // nome nel file
-        const wchar_t* displayName; // nome nel menu
+        const wchar_t* englishName; // nome nel menu, in inglese
+        const wchar_t* italianName; // ...e in italiano
         winrt::Windows::UI::Color fillLight;
         winrt::Windows::UI::Color fillDark;
         winrt::Windows::UI::Color textLight; // iniziale sopra il colore
         winrt::Windows::UI::Color textDark;
+
+        // Nome nel menu, nella lingua dell'app.
+        const wchar_t* DisplayName() const { return Tr(englishName, italianName); }
     };
 
     // Colori disponibili (senza "nessuno"), nell'ordine del menu.

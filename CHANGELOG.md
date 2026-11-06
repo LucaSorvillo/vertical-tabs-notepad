@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 — 2026-11-06
+
+- The app follows the Windows display language: Italian if Windows is in Italian, English otherwise. This covers
+  the tray menu, the "Tab color" menu and its colors, tooltips and accessibility names.
+- The setup chooses its language the same way, without asking.
+- Documentation and website with English screenshots. The website picks its language from the browser, with
+  English as the fallback.
+
 ## 1.0.0 — 2026-11-06
 
 First public release.
