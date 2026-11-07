@@ -6,16 +6,17 @@
 
   function store(key, value) { try { localStorage.setItem(key, value); } catch (e) { /* private mode */ } }
 
-  // ---- Language
+  // ---- Language: only a click on English/Italiano is remembered (both sites share it: same origin).
+  // Without a click every visit follows ?lang= or the browser's preferred language again.
   var langButtons = document.querySelectorAll('[data-set-lang]');
-  function setLang(lang) {
+  function setLang(lang, remember) {
     root.lang = lang;
     root.setAttribute('data-lang', lang);
     langButtons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-set-lang') === lang)); });
-    store('vt-lang', lang);
+    if (remember) store('vt-lang-choice', lang);
   }
-  langButtons.forEach(function (b) { b.addEventListener('click', function () { setLang(b.getAttribute('data-set-lang')); }); });
-  setLang(root.getAttribute('data-lang') === 'it' ? 'it' : 'en');
+  langButtons.forEach(function (b) { b.addEventListener('click', function () { setLang(b.getAttribute('data-set-lang'), true); }); });
+  setLang(root.getAttribute('data-lang') === 'it' ? 'it' : 'en', false);
 
   // ---- Collapse (on narrow screens the open column is an overlay that closes after a choice)
   var toggle = document.querySelector('.collapse');

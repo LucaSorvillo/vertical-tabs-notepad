@@ -18,7 +18,9 @@
 <script>
 (function () {
   var d = document.documentElement, l = null, c = null;
-  try { l = new URLSearchParams(location.search).get('lang') || localStorage.getItem('vt-lang'); c = localStorage.getItem('vt-collapsed'); } catch (e) {}
+  // Language: ?lang= in the link, then a choice made with the English/Italiano buttons, then the browser's first
+  // preferred language. The old 'vt-lang' key was saved on every visit, not only by a choice: ignore and drop it.
+  try { l = new URLSearchParams(location.search).get('lang') || localStorage.getItem('vt-lang-choice'); c = localStorage.getItem('vt-collapsed'); localStorage.removeItem('vt-lang'); } catch (e) {}
   if (l !== 'it' && l !== 'en') l = /^it\b/i.test((navigator.languages && navigator.languages[0]) || navigator.language || '') ? 'it' : 'en';
   d.lang = l; d.setAttribute('data-lang', l);
   d.setAttribute('data-collapsed', String(window.matchMedia('(max-width: 760px)').matches || c === 'true'));
