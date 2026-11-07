@@ -1018,6 +1018,39 @@ try {
     Select-Element (Find-PanelRow $h 'npx-test-1')
     Wait-Until { (Get-SelectedNative $h) -eq 'npx-test-1' } | Out-Null
 
+    # --- Tabelle Markdown (vista formattata) dentro l'editor -----------------------------------------
+    # Il Blocco note dà alle celle una larghezza fissa calcolata sulla finestra intera (GetClientRect della principale, meno
+    # la barra verticale e 16 DIP): con la colonna la tabella usciva a destra di quanto è larga la colonna. La mod gli fa
+    # togliere la colonna (EditorWidth.cpp): la tabella sta nell'editor con il margine destro del Blocco note originale, a
+    # colonna espansa e compressa (il Blocco note la ridisegna al giro di layout che la mod gli chiede).
+    $tabella = Join-Path $NpxTestDir "${NpxTestPrefix}tabella.md"
+    Set-Content -LiteralPath $tabella -Encoding UTF8 -Value @('# Prova tabella', '', '| Colonna A | Colonna B | Colonna C | Colonna D |', '|---|---|---|---|',
+        '| uno | due | tre | quattro |', '| cinque | sei | sette | otto |', '', 'Fine del documento.')
+    Open-FileInWindow $h $tabella
+    Start-Sleep -Milliseconds 2500
+    $tableExpanded = Measure-MarkdownTable $h
+    $viewSwitched = $false
+    if ($tableExpanded.Rows -eq 0 -and (Set-MarkdownView $h (UiName 'Formatted' 'Formattato'))) {
+        $viewSwitched = $true # vista Syntax dell'utente: Formatted per la prova, poi di nuovo Syntax
+        Start-Sleep -Milliseconds 1500
+        $tableExpanded = Measure-MarkdownTable $h
+    }
+    Check 'Tabella Markdown (Formatted) dentro l''editor, a colonna espansa' $tableExpanded.Fits (Format-MarkdownTable $tableExpanded)
+    Invoke-PanelToggle $h $true
+    Wait-Stable { (Get-IniValue 'Collapsed') -eq '1' } | Out-Null
+    Start-Sleep -Milliseconds 2000
+    $tableCollapsed = Measure-MarkdownTable $h
+    Check '  a colonna compressa: più larga, sempre dentro' ($tableCollapsed.Fits -and $tableCollapsed.Width -gt $tableExpanded.Width + 50) (Format-MarkdownTable $tableCollapsed)
+    Invoke-PanelToggle $h $false
+    Wait-Stable { (Get-IniValue 'Collapsed') -eq '0' } | Out-Null
+    Start-Sleep -Milliseconds 2000
+    $tableBack = Measure-MarkdownTable $h
+    Check '  di nuovo espansa: come prima' ($tableBack.Fits -and [Math]::Abs($tableBack.Width - $tableExpanded.Width) -le 3) (Format-MarkdownTable $tableBack)
+    if ($viewSwitched) { [void](Set-MarkdownView $h (UiName 'Syntax' 'Sintassi')) }
+    Close-PanelTab $h "${NpxTestPrefix}tabella"
+    Select-Element (Find-PanelRow $h 'npx-test-1')
+    Wait-Until { (Get-SelectedNative $h) -eq 'npx-test-1' } | Out-Null
+
     # --- Fuori dal pannello il menu nativo resta quello originale -------------------------------
     # Gate per finestra: solo le altre finestre restano in verticale, quella di prova torna orizzontale
     # (se l'utente le ha spente, nessuna finestra resta abilitata).

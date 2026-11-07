@@ -148,7 +148,7 @@ del Blocco note e usa i suoi comandi.
 La barra delle schede originale resta viva ma nascosta, quindi chiudere una scheda passa sempre dalla domanda
 "Salvare le modifiche?" del Blocco note. Il modulo sposta le finestre figlie del Blocco note per fare posto
 alla colonna e nasconde la riga del titolo. Disegna anche i propri pulsanti della finestra e adatta le barre di
-scorrimento e la zona "vetro" della finestra.
+scorrimento, la zona "vetro" della finestra e la larghezza che il Blocco note usa per le tabelle del Markdown formattato.
 
 I dettagli sono in [ARCHITECTURE.md](ARCHITECTURE.md) (in inglese). Le note di sviluppo complete, in italiano,
 sono in [DESIGN-NOTES.it.md](DESIGN-NOTES.it.md).

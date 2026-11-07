@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.1 — 2026-11-07
+
+- Fixed: in Markdown's **Formatted** view, tables went off the right edge of Notepad by the width of the tab column.
+  Notepad sizes the table cells from the width of the whole window; with the column, the editor is narrower than the
+  window. Tables now fit the editor, with the same margin as in Notepad without the app, and follow the column when it's
+  collapsed or expanded.
+
 ## 1.3.0 — 2026-11-07
 
 - **Exit** now removes the app from Notepad completely: the module leaves the open Notepad windows, and nothing of

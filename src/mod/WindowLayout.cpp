@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "WindowLayout.h"
 
+#include "EditorWidth.h"
 #include "Glass.h"
 #include "Interop.h"
 #include "Lifetime.h"
@@ -170,6 +171,7 @@ namespace npx
             pin::Clear(hwnd);
         }
         m_tracked.clear();
+        SetTextWidthReduction(0, /*relayout*/ false);
         m_active = false;
     }
 
@@ -724,6 +726,7 @@ namespace npx
         {
             editorWanted.top -= raise;
         }
+        SetTextWidthReduction((editorNatural.right - editorNatural.left) - (editorWanted.right - editorWanted.left), /*relayout*/ true);
         const int floatingGap = MulDiv(8, static_cast<int>(dpi), 96);
         const int floatingAnchor = MulDiv(32, static_cast<int>(dpi), 96);
         std::vector<HWND> floatingOverColumn; // isole sospese che sporgono sulla colonna: il pannello va sotto di loro
@@ -939,6 +942,7 @@ namespace npx
 
     void WindowLayout::RestoreChildren()
     {
+        SetTextWidthReduction(0, /*relayout*/ false); // (SetActive(false) fa poi ricalcolare il layout al Blocco note)
         for (auto const& [hwnd, tracked] : m_tracked)
         {
             pin::Clear(hwnd); // prima di rimetterla al posto naturale: la regola lo impedirebbe
@@ -981,6 +985,24 @@ namespace npx
         GetClientRect(m_main, &client);
         PostMessageW(m_main, WM_SIZE, IsZoomed(m_main) ? SIZE_MAXIMIZED : SIZE_RESTORED,
                      MAKELPARAM(client.right - client.left, client.bottom - client.top));
+    }
+
+    void WindowLayout::SetTextWidthReduction(int px, bool relayout)
+    {
+        px = std::max(0, px);
+        if (px == m_textWidthReduction)
+        {
+            return;
+        }
+        m_textWidthReduction = px;
+        editorwidth::SetReduction(m_main, px);
+        NPX_VLOG(L"WindowLayout: larghezza del testo per il Blocco note ridotta di %d px.", px);
+        if (relayout)
+        {
+            // Il Blocco note ricalcola la larghezza del testo quando dispone l'editor: un giro del suo layout (accodato, come
+            // a ogni WM_SIZE; poi questo controllo trova la stessa riduzione e non ne chiede altri).
+            RequestNativeRelayout();
+        }
     }
 
     void WindowLayout::SetPanelShown(bool shown)

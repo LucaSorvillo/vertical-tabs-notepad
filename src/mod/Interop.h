@@ -17,6 +17,10 @@ namespace npx::interop
     // Nome della classe di finestra.
     std::wstring ClassOf(HWND hwnd);
 
+    // Voce della tabella delle importazioni (IAT) di 'module' per dll!function (nome della DLL senza distinzione di
+    // maiuscole), o nullptr. Per gli agganci alle importazioni di Notepad.exe (glass::, editorwidth::).
+    void** FindImport(HMODULE module, const char* dll, const char* function);
+
     // Le nostre isole sovrapposte all'editor (es. il pulsante "Torna su") hanno questa proprietà di
     // finestra: il layout delle schede verticali non le tratta come finestre del Blocco note.
     inline constexpr wchar_t kOverlayProp[] = L"VTabsNotepad.Overlay";

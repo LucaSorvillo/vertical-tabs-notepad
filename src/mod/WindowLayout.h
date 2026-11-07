@@ -105,6 +105,10 @@ namespace npx
         void RemoveHooks();
         void RestoreChildren();
         void RequestNativeRelayout();
+        // Pixel che la colonna toglie alla larghezza dell'editor (0 = nessuno): li toglie anche alla larghezza del testo che il
+        // Blocco note misura per le tabelle Markdown (EditorWidth.h). Se cambiano e relayout, un giro del layout del Blocco
+        // note gliela fa ricalcolare (e ridisegnare le tabelle).
+        void SetTextWidthReduction(int px, bool relayout);
         void SetPanelShown(bool shown);
         HWND FindEditor() const;
         RECT NaturalRect(HWND hwnd, RECT const& current);
@@ -138,6 +142,7 @@ namespace npx
         std::optional<POINT> m_nativeTabsPin; // posizione temporanea (menu contestuale aperto)
         RECT m_panelCaption{};      // fascia del titolo in cima alla colonna (coordinate client; vuota se la colonna non è in cima)
         int m_glassFallbackTop = 0; // inizio naturale dell'editor: dove finisce la zona vetro del Blocco note (Glass.h)
+        int m_textWidthReduction = 0; // pixel tolti alla larghezza del testo (EditorWidth.h)
         HWND m_menuBarHwnd = nullptr;     // isola della barra dei menu salita nella riga del titolo (nullptr se non lo è)
         std::vector<RECT> m_menuBarHoles; // zone vuote richieste (coordinate dell'isola)
         SIZE m_menuBarHolesSize{};        // misura dell'isola per cui sono state calcolate

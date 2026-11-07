@@ -107,6 +107,7 @@ to `TabsBar`, `TabItemViewModel` and their commands (`ReorderTab`, `SelectTabByT
 | `WheelScroll.cpp` | A per-thread `WH_GETMESSAGE` hook on each editor thread turns `WM_MOUSEWHEEL` into `EM_LINESCROLL`, with a pixel fallback clamped to the end of the document. |
 | `ScrollBarFit.cpp` | Notepad sizes its scrollbars for its own layout and sets them again at every layout pass. A synchronous property-changed callback adds the difference to both the viewport and the content. |
 | `ScrollBarHover.cpp` | Sets WinUI's 0.4 s scrollbar expand delay to zero by editing the template's storyboards. |
+| `EditorWidth.cpp` | Notepad sizes the tables of formatted Markdown (RTF cells with a fixed `\cellx`) from the client width of the main window, minus the vertical scrollbar and 16 DIP: with the column they went off the right edge. An import hook on `GetClientRect` subtracts the column, only for main windows with the column and only for that computation, recognized by the code after the call (`GetDpiForWindow`, `GetSystemMetricsForDpi(SM_CXVSCROLL)`, `MulDiv(16, dpi, 96)`), not by fixed addresses. When the column width changes, a native layout pass makes Notepad recompute it. |
 | `ScrollRangeFix.cpp` | Works around two native `RichEdit` issues: a phantom vertical range when the text fits (fixed with `SetScrollInfo`), and XAML scrollbars that only re-read ranges on `EN_UPDATE` (so one is posted when the ranges change). |
 
 ### Robustness

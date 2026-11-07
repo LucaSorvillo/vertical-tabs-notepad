@@ -359,6 +359,56 @@ if (-not ('NpxPrint' -as [type])) {
 }
 # (Nome diverso da Get-EditorTopColors, che legge lo schermo: con lo stesso nome questa la copriva e i controlli sulla
 # fascia in cima all'editor trovavano campi vuoti.)
+# Tabella Markdown della vista formattata nell'editor visibile (immagine della finestra con PrintWindow): le righe di bordo
+# sono tratti chiari lunghi (più di 300 px). Inizio e fine della tabella, bordi dell'editor (pixel della finestra) e se la
+# tabella sta dentro l'editor.
+function Measure-MarkdownTable([int64]$Hwnd) {
+    $old = [NpxPrint]::SetThreadDpiAwarenessContext([IntPtr](-4))
+    try {
+        $er = Get-EditorRect $Hwnd
+        $w = New-Object NpxPrint+RECT; [void][NpxPrint]::GetWindowRect([IntPtr]$Hwnd, [ref]$w)
+        $e = New-Object NpxPrint+RECT; [void][NpxPrint]::GetWindowRect([IntPtr]$er.Hwnd, [ref]$e)
+        $bmp = New-Object Drawing.Bitmap ($w.Right - $w.Left), ($w.Bottom - $w.Top)
+        $g = [Drawing.Graphics]::FromImage($bmp); $dc = $g.GetHdc(); [void][NpxPrint]::PrintWindow([IntPtr]$Hwnd, $dc, 2); $g.ReleaseHdc($dc)
+        $left = $e.Left - $w.Left; $right = $e.Right - $w.Left; $top = $e.Top - $w.Top
+        $tableLeft = [int]::MaxValue; $tableRight = -1; $rows = 0
+        for ($y = $top + 10; $y -lt [Math]::Min($top + 420, $bmp.Height); $y++) {
+            $run = 0; $best = 0; $bestEnd = -1; $bestStart = -1
+            for ($x = $left; $x -lt $right; $x++) {
+                $c = $bmp.GetPixel($x, $y)
+                if ($c.R -gt 90 -and $c.R -lt 235 -and [Math]::Abs($c.R - $c.G) -lt 12 -and [Math]::Abs($c.G - $c.B) -lt 12) {
+                    $run++
+                    if ($run -gt $best) { $best = $run; $bestEnd = $x; $bestStart = $x - $run + 1 }
+                }
+                else { $run = 0 }
+            }
+            if ($best -gt 300) { $rows++; $tableRight = [Math]::Max($tableRight, $bestEnd); $tableLeft = [Math]::Min($tableLeft, $bestStart) }
+        }
+        $g.Dispose(); $bmp.Dispose()
+        [pscustomobject]@{ Left = $tableLeft; Right = $tableRight; Width = $tableRight - $tableLeft + 1; EditorLeft = $left; EditorRight = $right - 1; Rows = $rows
+            Fits = $rows -gt 0 -and $tableLeft -ge $left -and $tableRight -lt $right - 4 }
+    }
+    finally { [void][NpxPrint]::SetThreadDpiAwarenessContext($old) }
+}
+function Format-MarkdownTable($M) {
+    if (-not $M -or $M.Rows -eq 0) { return 'nessuna tabella disegnata' }
+    "tabella x {0}-{1} (larga {2}), editor x {3}-{4}" -f $M.Left, $M.Right, $M.Width, $M.EditorLeft, $M.EditorRight
+}
+# Vista del Markdown (View > Markdown > Formatted/Syntax, impostazione del Blocco note): sceglie la voce; false se non c'è.
+function Set-MarkdownView([int64]$Hwnd, [string]$Item) {
+    $view = Find-Control $Hwnd (UiName 'View' 'Visualizza') $CT::MenuItem
+    $view.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
+    Start-Sleep -Milliseconds 700
+    $md = Get-MenuItems | Where-Object { $_.Current.Name -eq 'Markdown' } | Select-Object -First 1
+    if (-not $md) { $view.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern).Collapse(); return $false }
+    try { $md.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern).Expand() } catch { Invoke-Any $md }
+    Start-Sleep -Milliseconds 700
+    $entry = Get-MenuItems | Where-Object { $_.Current.Name -eq $Item } | Select-Object -First 1
+    if (-not $entry) { $view.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern).Collapse(); return $false }
+    Invoke-Any $entry
+    Start-Sleep -Milliseconds 1500
+    $true
+}
 function Get-EditorPrintColors([int64]$Hwnd) {
     $old = [NpxPrint]::SetThreadDpiAwarenessContext([IntPtr](-4))
     try {

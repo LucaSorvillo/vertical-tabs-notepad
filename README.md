@@ -143,7 +143,8 @@ unloads. The column is bound to Notepad's tab data and drives Notepad's own comm
 
 The original tab strip stays alive but hidden, so closing a tab still goes through Notepad's "Save changes?"
 dialog. The module moves Notepad's child windows to make room for the column and hides the title row. It also
-draws its own window buttons and adjusts the scrollbars and the glass area of the window.
+draws its own window buttons and adjusts the scrollbars, the glass area of the window and the width Notepad uses for
+the tables of formatted Markdown.
 
 The details are in [ARCHITECTURE.md](ARCHITECTURE.md). The full development notes (in Italian) are in
 [DESIGN-NOTES.it.md](DESIGN-NOTES.it.md).

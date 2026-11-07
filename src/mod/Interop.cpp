@@ -75,4 +75,48 @@ namespace npx::interop
         }, reinterpret_cast<LPARAM>(&context));
         return context.result;
     }
+
+    void** FindImport(HMODULE module, const char* dll, const char* function)
+    {
+        auto* base = reinterpret_cast<BYTE*>(module);
+        const auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
+        if (!module || dos->e_magic != IMAGE_DOS_SIGNATURE)
+        {
+            return nullptr;
+        }
+        const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS*>(base + dos->e_lfanew);
+        if (nt->Signature != IMAGE_NT_SIGNATURE)
+        {
+            return nullptr;
+        }
+        const IMAGE_DATA_DIRECTORY& directory = nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+        if (directory.VirtualAddress == 0 || directory.Size == 0)
+        {
+            return nullptr;
+        }
+        for (auto* descriptor = reinterpret_cast<const IMAGE_IMPORT_DESCRIPTOR*>(base + directory.VirtualAddress); descriptor->Name;
+             ++descriptor)
+        {
+            if (_stricmp(reinterpret_cast<const char*>(base + descriptor->Name), dll) != 0)
+            {
+                continue;
+            }
+            auto* slot = reinterpret_cast<IMAGE_THUNK_DATA*>(base + descriptor->FirstThunk);
+            const auto* name = reinterpret_cast<const IMAGE_THUNK_DATA*>(
+                base + (descriptor->OriginalFirstThunk ? descriptor->OriginalFirstThunk : descriptor->FirstThunk));
+            for (; name->u1.AddressOfData; ++name, ++slot)
+            {
+                if (IMAGE_SNAP_BY_ORDINAL(name->u1.Ordinal))
+                {
+                    continue;
+                }
+                const auto* byName = reinterpret_cast<const IMAGE_IMPORT_BY_NAME*>(base + name->u1.AddressOfData);
+                if (strcmp(reinterpret_cast<const char*>(byName->Name), function) == 0)
+                {
+                    return reinterpret_cast<void**>(&slot->u1.Function);
+                }
+            }
+        }
+        return nullptr;
+    }
 }

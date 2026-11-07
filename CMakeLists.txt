@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(VTabsNotepad VERSION 1.3.0 LANGUAGES CXX RC)
+project(VTabsNotepad VERSION 1.3.1 LANGUAGES CXX RC)
 
 if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(FATAL_ERROR "VTabsNotepad va compilato a 64 bit (x64): il Blocco note è un processo x64.")
@@ -41,6 +41,7 @@ add_library(VTabsNotepadMod SHARED
     src/mod/dllmain.cpp
     src/mod/CaptionButtons.cpp
     src/mod/Discovery.cpp
+    src/mod/EditorWidth.cpp
     src/mod/Glass.cpp
     src/mod/Interop.cpp
     src/mod/Log.cpp

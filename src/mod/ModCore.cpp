@@ -2,6 +2,7 @@
 #include "ModCore.h"
 
 #include "CaptionButtons.h"
+#include "EditorWidth.h"
 #include "Glass.h"
 #include "Interop.h"
 #include "Lifetime.h"
@@ -371,8 +372,9 @@ namespace npx
         g_activeMutex = activeMutex;
 
         // Zona vetro della finestra (riga del titolo nascosta): finché nessuna finestra ha un limite, l'aggancio la
-        // lascia com'è.
+        // lascia com'è. Larghezza del testo per le tabelle Markdown: finché nessuna finestra ha la colonna, invariata.
         glass::Install();
+        editorwidth::Install();
 
         winrt::init_apartment(winrt::apartment_type::multi_threaded);
 
@@ -1455,7 +1457,7 @@ namespace npx
                 }
             }
             // 2. Agganci: di nuovo le funzioni originali del Blocco note e di WinUI, e niente subclass negli editor.
-            if (!discovery::Uninstall() || !glass::Uninstall() || !pin::Uninstall())
+            if (!discovery::Uninstall() || !glass::Uninstall() || !editorwidth::Uninstall() || !pin::Uninstall())
             {
                 NPX_LOG(L"Scaricamento rimandato: un aggancio non si può (ancora) togliere (la mod resta, spenta).");
                 return false;
@@ -1513,6 +1515,7 @@ namespace npx
         lifetime::g_unloading = false;
         pin::Resume();
         glass::Install();
+        editorwidth::Install();
         StartDiscovery();
     }
 

@@ -320,6 +320,42 @@ mostrata in quel momento: vedi "Pulsante Torna su". Misurato a ogni scatto, foto
 toccare il mouse: prima "da mouse" alla prima prova e "di scorrimento" alle seguenti; ora "di scorrimento" in 6
 prove su 6, come senza mod.
 
+### Tabelle del Markdown formattato (uscivano a destra; corretto nella 1.3.1)
+
+Segnalato dall'utente: con Markdown > Formatted le tabelle "sforano alla destra del Blocco note". Riprodotto in una
+finestra di prova con un .md di prova (4 colonne): con la colonna delle schede ogni cella era larga 256-257 px, la
+tabella 1026 px (come senza mod) in un editor largo 816, cioè dimensionata sulla finestra intera (1074 px); senza mod la
+tabella sta nell'editor e restringendo la finestra il Blocco note la ricalcola (192 px a cella). Né un passaggio Syntax/Formatted né un `WM_SIZE` con
+la misura vera all'editor la cambiavano: la larghezza non viene dalla finestra dell'editor.
+
+Trovato nel disassemblato di `Notepad.exe` (versione 11.2607.14.0, `dumpbin /disasm`, senza simboli):
+- le tabelle sono RTF con celle di larghezza fissa: stringhe di formato `\trowd\trgaph180\trrh600{} ` e
+  `... \cellx{} `; `\cellx` = i x larghezza della cella in twip;
+- larghezza della cella = `[oggetto+0x144] / colonne`, tra un minimo di 40 px (`MulDiv(40, 1440, dpi)`) e
+  `0x7BC0 / colonne`; `[oggetto+0x144]` = (larghezza - uno spazio del carattere x zoom) x 1440 / dpi x 100 / zoom
+  (GDI: `CreateFontIndirectW`, `GetTextExtentPoint32W(" ")`), dalle metriche della vista copiate alla creazione;
+- le metriche (dpi da `GetDpiForWindow`, zoom, larghezza in px) si ricalcolano solo in modalità Formatted
+  (`[vista+0x108] == 2`) quando il Blocco note dispone l'editor (dopo `MoveWindow`) e dopo `EM_SETZOOM`; la larghezza la
+  dà una funzione che fa `GetClientRect` di una finestra più larga dell'editor (la principale) meno
+  `GetSystemMetricsForDpi(SM_CXVSCROLL)` meno `MulDiv(16, dpi, 96)`.
+
+Rimedio (`EditorWidth.cpp`): aggancio alla `GetClientRect` delle importazioni di `Notepad.exe` (come quello di
+`DwmExtendFrameIntoClientArea` in `Glass.cpp`; `interop::FindImport` ora è comune). Tocca il risultato solo se la finestra
+è una principale con la colonna (`SetReduction`, la larghezza che la colonna toglie all'editor: naturale meno voluta, da
+`WindowLayout::Check`) e se il codice dopo la chiamata è quel calcolo: entro 80 byte dall'indirizzo di ritorno, chiamate
+attraverso le importazioni a `GetDpiForWindow`, poi `GetSystemMetricsForDpi` preceduta da `mov ecx, 2`, poi `MulDiv`
+(confronto con gli indirizzi veri delle tre API; risultato per indirizzo di ritorno in una cache). Niente indirizzi fissi:
+se un aggiornamento cambia quel codice, l'aggancio lascia tutto com'è. Quando la riduzione cambia (colonna compressa o
+espansa, schede verticali spente o accese) `WindowLayout::SetTextWidthReduction` chiede al Blocco note un giro del suo
+layout (`WM_SIZE` accodato), che ricalcola e ridisegna le tabelle; il controllo dopo trova la stessa riduzione e non ne
+chiede altri. Con "Esci" l'aggancio si toglie come gli altri (`editorwidth::Uninstall`).
+
+Prove: scratchpad `np-md-table-test.ps1`, 8/8 (immagine della sola finestra di prova con PrintWindow, righe di bordo
+della tabella): espansa x 286-1053 in un editor 266-1081, compressa 98-1053 (78-1081), senza mod 28-1053 (8-1081), finestra
+più stretta 286-853 (266-881), zoom su e giù; lo stesso margine destro di 28 px del Blocco note originale in tutti i casi.
+In `Run-Tests.ps1` "Tabella Markdown (Formatted) dentro l'editor" (espansa, compressa, di nuovo espansa; se la vista è
+Syntax la si mette Formatted per la prova e poi la si rimette). Suite 137/137, scaricamento 23/23.
+
 ### Clic che riattiva la finestra (il testo saltava; corretto nella 1.2.1)
 
 Tornando al Blocco note da un'altra app con un clic su una riga, il testo saltava e il clic finiva su un'altra riga,
