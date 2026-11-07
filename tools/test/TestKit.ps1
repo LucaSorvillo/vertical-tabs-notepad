@@ -282,7 +282,7 @@ function Enable-WordWrap([int64]$Hwnd) {
         $view = Find-Control $Hwnd (UiName 'View' 'Visualizza') $CT::MenuItem
         $view.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
         Start-Sleep -Milliseconds 600
-        $item = Get-MenuItems | Where-Object { $_.Current.Name -eq 'A capo automatico' } | Select-Object -First 1
+        $item = Get-MenuItems | Where-Object { $_.Current.Name -eq (UiName 'Word wrap' 'A capo automatico') } | Select-Object -First 1
         if (-not $item) { $view.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern).Collapse(); return $false }
         Invoke-Any $item
         Start-Sleep -Milliseconds 1200
@@ -550,7 +550,7 @@ function Switch-WordWrap([int64]$Hwnd) {
     $view = Find-Control $Hwnd (UiName 'View' 'Visualizza') $CT::MenuItem
     $view.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
     Start-Sleep -Milliseconds 600
-    $item = Get-MenuItems | Where-Object { $_.Current.Name -eq 'A capo automatico' } | Select-Object -First 1
+    $item = Get-MenuItems | Where-Object { $_.Current.Name -eq (UiName 'Word wrap' 'A capo automatico') } | Select-Object -First 1
     if (-not $item) { $view.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern).Collapse(); return $false }
     Invoke-Any $item
     Start-Sleep -Milliseconds 1200
@@ -774,7 +774,7 @@ function Set-IniSectionValue([string]$Section, [string]$Key, [AllowNull()][strin
 function Close-TestWindow([switch]$RemoveFiles) {
     $state = Get-TestState
     if ($state -and [NpxKit]::IsWindow([IntPtr]$state.test)) {
-        $foreign = @(Get-NativeTabs $state.test | Where-Object { -not ($_.Current.Name.StartsWith($NpxTestPrefix) -or $_.Current.Name.StartsWith('Senza titolo. Non modificato')) })
+        $foreign = @(Get-NativeTabs $state.test | Where-Object { -not ($_.Current.Name.StartsWith($NpxTestPrefix) -or $_.Current.Name -match '^(Senza titolo\. Non modificato|Untitled\. Unmodified)') })
         if ($foreign.Count -gt 0) { throw 'La finestra di prova contiene schede che non sono di prova: non la chiudo.' }
         [NpxKit]::PostMessage([IntPtr]$state.test, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
         $deadline = (Get-Date).AddSeconds(10)

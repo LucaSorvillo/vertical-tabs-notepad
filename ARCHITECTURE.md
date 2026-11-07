@@ -53,7 +53,16 @@ to `TabsBar`, `TabItemViewModel` and their commands (`ReorderTab`, `SelectTabByT
 ### Per-window layout (`WindowLayout.cpp`)
 
 - Keeps the rectangle Notepad gives to each child window and translates it out of the column. It
-  re-aligns on `WM_SIZE`, on WinEvents and with a periodic check.
+  re-aligns on `WM_SIZE`, right after the activation messages, on WinEvents and with a periodic check.
+- **Activation.** Notepad re-applies its own rectangles every time the window is activated, without a size
+  change. `PositionPin.cpp` keeps the windows the layout moves (editor, text surface, scrollbar islands, menu
+  bar) where they are: a subclass on each window's own thread turns a `WM_WINDOWPOSCHANGING` that asks again for
+  the same natural rectangle into "no move". Otherwise the editor was resized in the middle of the click that
+  activated the window: the click landed on another line and `RichEdit` scrolled the caret into view.
+- In the hidden title row a plain click activates the window without entering the move loop (`DragDetect`).
+  Leaving that loop makes the input stack ask the editor for the caret position (`IMR_QUERYCHARPOSITION`) and
+  `RichEdit` scrolls it into view, as Notepad itself does on its own title bar. Dragging, double-click and
+  right-click are unchanged.
 - Hides the title row: the menu bar moves up next to the window buttons, and the editor and its scrollbars
   grow upwards.
 - **Floating islands** (the <kbd>Ctrl</kbd>+<kbd>F</kbd> find bar) are moved with the editor at their natural size,

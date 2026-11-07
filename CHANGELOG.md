@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.1 — 2026-11-07
+
+- Fixed: clicking a line to switch back to Notepad from another app could make the text jump and put the caret,
+  or a selection, on another line. Notepad puts its windows back in their original place every time the window
+  is activated; the layout now keeps them where they are.
+- A plain click on the empty part of the title row activates the window without moving the text. Dragging,
+  double-click and right-click work as before.
+
 ## 1.2.0 — 2026-11-06
 
 - <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>: the reopened tab gets its color back too, like in VTabsExplorer.

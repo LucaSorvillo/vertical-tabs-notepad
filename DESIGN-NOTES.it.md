@@ -315,6 +315,42 @@ mostrata in quel momento: vedi "Pulsante Torna su". Misurato a ogni scatto, foto
 toccare il mouse: prima "da mouse" alla prima prova e "di scorrimento" alle seguenti; ora "di scorrimento" in 6
 prove su 6, come senza mod.
 
+### Clic che riattiva la finestra (il testo saltava; corretto nella 1.2.1)
+
+Tornando al Blocco note da un'altra app con un clic su una riga, il testo saltava e il clic finiva su un'altra riga,
+oppure selezionava invece di posare il cursore. Senza la mod non succede.
+
+A ogni attivazione della finestra il Blocco note rimette le sue finestre figlie dove le vuole lui: editor, superficie
+di testo, barre di scorrimento, barra dei menu. Lo fa dentro `WM_ACTIVATE`, anche senza cambiare misura (niente
+`WM_SIZE`). La mod le riportava nel suo layout solo all'arrivo dell'evento WinEvent, 30-60 ms dopo. Il clic che aveva
+attivato la finestra arrivava all'editor proprio in quel momento, cioè ~49 px più in basso: cadeva tre righe più su
+e la selezione andava da lì al punto vero. In più la superficie di testo, ridimensionata due volte con il focus
+mentre elaborava il clic (un `WM_LBUTTONDOWN` inviato durante `WM_MOUSEACTIVATE`), riportava in vista il cursore
+lampeggiante prima di posare il clic: il testo saltava alla sua riga.
+
+Correzione (`PositionPin.cpp`): per ogni finestra che il layout sposta si ricordano il rettangolo naturale e quello
+voluto. Un subclass sul thread della finestra trasforma in "nessuno spostamento" ogni `WM_WINDOWPOSCHANGING` che chiede
+di nuovo proprio il rettangolo naturale mentre la finestra è già dove la vuole la mod. Gli editor hanno un thread
+ciascuno: il subclass lo si installa da lì, con un hook `WH_GETMESSAGE` e un messaggio registrato. Un rettangolo
+naturale nuovo (finestra ridimensionata) passa come prima. In più `Check()` gira subito dopo `WM_NCACTIVATE`,
+`WM_ACTIVATE` e `WM_WINDOWPOSCHANGED`.
+
+Il clic sulla riga del titolo nascosta (dove `HTCAPTION` lo dà la mod) apriva subito il ciclo di spostamento della
+finestra. Alla sua uscita l'input di Windows chiede all'editor dove sta il cursore (`WM_IME_REQUEST`,
+`IMR_QUERYCHARPOSITION`) e la RichEdit lo riporta in vista. Lo fa anche il Blocco note originale, cliccando o
+trascinando la sua barra del titolo. Ora la finestra passa in primo piano alla pressione e si sposta solo
+trascinando (`DragDetect`): il clic semplice non muove il testo.
+
+Provato su una finestra di prova con un'altra app accanto, mouse e rotella veri, e confrontato con il Blocco note
+senza mod (la stessa finestra esclusa con `dev-windows.txt`):
+
+- clic su una riga dopo aver scorso con la rotella, da finestra attiva e non attiva;
+- ritorno con Alt+Tab;
+- clic e trascinamento sulla riga del titolo.
+
+Prima 4 casi su 6 sbagliati, ora tutti giusti. Il layout resta giusto ridimensionando e ingrandendo la finestra,
+cambiando scheda, comprimendo la colonna, con la barra di ricerca e con "Torna su".
+
 Impostazioni e log: `%LOCALAPPDATA%\VTabsNotepad\` (`settings.ini`, `tab-colors.ini`, `logs\`).
 
 ## Compilazione

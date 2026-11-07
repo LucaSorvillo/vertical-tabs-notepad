@@ -128,6 +128,7 @@ namespace npx
         bool m_panelShown = false;
         bool m_panelLowered = false; // pannello in fondo all'ordine Z: sotto un'isola sospesa che sporge sulla colonna
         bool m_inCheck = false;
+        int m_moves = 0; // finestre spostate da Move (per il log: quante ne ha rimesse a posto un controllo)
         bool m_subclassed = false;
         ULONGLONG m_noEditorSince = 0; // da quando non c'è un editor visibile (0 = c'è)
         HWINEVENTHOOK m_hookShowHide = nullptr;

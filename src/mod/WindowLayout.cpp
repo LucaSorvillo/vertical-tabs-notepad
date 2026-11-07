@@ -4,6 +4,7 @@
 #include "Glass.h"
 #include "Interop.h"
 #include "Log.h"
+#include "PositionPin.h"
 
 namespace npx
 {
@@ -163,6 +164,10 @@ namespace npx
             }
             m_subclassed = false;
         }
+        for (auto const& [hwnd, tracked] : m_tracked)
+        {
+            pin::Clear(hwnd);
+        }
         m_tracked.clear();
         m_active = false;
     }
@@ -284,6 +289,26 @@ namespace npx
             return destroyed;
         }
 
+        if (message == WM_NCLBUTTONDOWN && wParam == HTCAPTION && self && self->m_active &&
+            (self->IsInHiddenTabsArea(lParam) || self->IsInPanelCaption(lParam) || self->IsInMenuBarHole(lParam)))
+        {
+            // Qui HTCAPTION lo diamo noi (WM_NCHITTEST più sotto). Per Windows un clic sulla barra del titolo apre subito il
+            // ciclo di spostamento della finestra, anche senza trascinare, e l'input di Windows chiede all'editor dove sta il
+            // cursore lampeggiante (WM_IME_REQUEST, IMR_QUERYCHARPOSITION): la RichEdit lo riporta in vista e il testo salta
+            // (lo fa anche il Blocco note originale cliccando la sua barra del titolo). Qui la finestra passa in primo piano
+            // alla pressione, come sempre, ma si sposta solo trascinando: il semplice clic finisce qui e il testo resta dov'è.
+            // Trascinamento, doppio clic (ingrandisci) e clic destro (menu di sistema) restano di Windows.
+            if (GetForegroundWindow() != hwnd)
+            {
+                SetForegroundWindow(hwnd);
+            }
+            const POINT point{ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+            if (!DragDetect(hwnd, point))
+            {
+                return 0;
+            }
+        }
+
         // La finestra principale del Blocco note non ha WS_CLIPCHILDREN: quando ridipinge il proprio sfondo copre anche le
         // figlie disegnate nella sua superficie, cioè l'editor (le isole XAML sono composte sopra e non ne risentono). Di
         // solito poi l'editor si ridisegna, ma sta su un altro thread e a volte lo fa prima: dopo un cambio di layout (pannello
@@ -355,6 +380,21 @@ namespace npx
             {
                 // Senza aggancio il Blocco note reimposta da solo la sua zona vetro (ad esempio ingrandendo la finestra).
                 glass::Reapply(hwnd);
+            }
+        }
+        else if (message == WM_NCACTIVATE || message == WM_ACTIVATE || message == WM_WINDOWPOSCHANGED)
+        {
+            // All'attivazione il Blocco note ricalcola il suo layout anche senza cambiare misura (niente WM_SIZE) e rimette
+            // l'editor al suo posto naturale. L'hook WinEvent ce lo diceva 30-60 ms dopo: il clic che aveva attivato la
+            // finestra arrivava all'editor ancora lì, cioè righe più su (una selezione al posto del cursore), e l'editor
+            // riportava in vista il cursore lampeggiante (il testo saltava). Si corregge dentro lo stesso messaggio.
+            const int moves = self->m_moves;
+            self->Check();
+            if (self->m_moves != moves)
+            {
+                NPX_VLOG(L"WindowLayout: %s, %d finestre rimesse subito nel layout della mod.",
+                         message == WM_NCACTIVATE ? L"WM_NCACTIVATE" : message == WM_ACTIVATE ? L"WM_ACTIVATE" : L"WM_WINDOWPOSCHANGED",
+                         self->m_moves - moves);
             }
         }
         return result;
@@ -562,6 +602,7 @@ namespace npx
             flags |= SWP_ASYNCWINDOWPOS;
         }
         SetWindowPos(hwnd, nullptr, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, flags);
+        ++m_moves;
     }
 
     void WindowLayout::Check()
@@ -705,6 +746,7 @@ namespace npx
                 if (const auto it = m_tracked.find(child);
                     it != m_tracked.end() && !IsEmpty(it->second.applied) && Same(current, it->second.applied) && !Same(current, natural))
                 {
+                    pin::Clear(child);
                     Move(child, natural);
                     it->second.applied = natural;
                 }
@@ -744,6 +786,9 @@ namespace npx
                 Move(child, wanted);
             }
             m_tracked[child].applied = wanted;
+            // Il Blocco note rimette le sue finestre al loro posto a ogni attivazione (e a volte poco dopo): editor, barre
+            // di scorrimento e barra dei menu restano ferme qui (vedi PositionPin.h).
+            pin::Set(child, natural, wanted);
             FitInnerWindows(child, natural, wanted);
         }
 
@@ -838,6 +883,7 @@ namespace npx
                 Move(inner, wanted);
             }
             m_tracked[inner].applied = wanted;
+            pin::Set(inner, natural, wanted); // la superficie di testo: niente WM_SIZE quando il Blocco note la riafferma
         }
     }
 
@@ -892,6 +938,7 @@ namespace npx
     {
         for (auto const& [hwnd, tracked] : m_tracked)
         {
+            pin::Clear(hwnd); // prima di rimetterla al posto naturale: la regola lo impedirebbe
             if (!IsWindow(hwnd) || IsEmpty(tracked.natural))
             {
                 continue;

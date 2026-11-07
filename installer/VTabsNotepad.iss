@@ -4,7 +4,7 @@
 
 #define AppName "Vertical Tabs for Notepad"
 #define AppShortName "VTabsNotepad"
-#define AppVersion "1.2.0"
+#define AppVersion "1.2.1"
 #define AppPublisher "LucaSorvillo"
 #define AppRepo "https://github.com/LucaSorvillo/vertical-tabs-notepad"
 #define AppSite "https://lucasorvillo.github.io/vertical-tabs-notepad/"
