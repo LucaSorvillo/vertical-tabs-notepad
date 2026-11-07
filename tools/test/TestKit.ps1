@@ -341,7 +341,7 @@ function Invoke-FindBarButton([int64]$Hwnd, [string]$NameLike) {
     $island = Get-FindBarIsland $Hwnd
     if (-not $island) { return $false }
     $b = $AE::FromHandle([IntPtr]$island.Hwnd).FindAll($TS::Descendants, (New-Object Windows.Automation.PropertyCondition($AE::ControlTypeProperty, $CT::Button))) |
-        Where-Object { $_.Current.Name -like $NameLike } | Select-Object -First 1
+        Where-Object { $_.Current.Name -like $NameLike -or $_.Current.AutomationId -eq $NameLike } | Select-Object -First 1
     if (-not $b) { return $false }
     Invoke-Element $b
     $true
@@ -357,7 +357,9 @@ if (-not ('NpxPrint' -as [type])) {
 [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr h, IntPtr dc, uint flags);
 '@
 }
-function Get-EditorTopColors([int64]$Hwnd) {
+# (Nome diverso da Get-EditorTopColors, che legge lo schermo: con lo stesso nome questa la copriva e i controlli sulla
+# fascia in cima all'editor trovavano campi vuoti.)
+function Get-EditorPrintColors([int64]$Hwnd) {
     $old = [NpxPrint]::SetThreadDpiAwarenessContext([IntPtr](-4))
     try {
         $editor = Get-EditorRect $Hwnd

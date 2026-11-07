@@ -70,23 +70,48 @@ function Test-RowHasInitial([int64]$Hwnd, [string]$Prefix) {
     $texts = @($row.FindAll($TS::Descendants, (New-Object Windows.Automation.PropertyCondition($AE::ControlTypeProperty, $CT::Text))))
     @($texts | Where-Object { $_.Current.Name.Length -eq 1 -and [char]::IsLetterOrDigit($_.Current.Name[0]) }).Count -gt 0
 }
-# Barra dei menu nella riga del titolo: lo spazio vuoto tra "Visualizza" e "Novità" è della finestra (sotto il punto c'è
-# lei, non l'isola: buco nella regione) e risponde come barra del titolo; "Visualizza" e "Novità" restano dell'isola
+# Barra dei menu nella riga del titolo: gli spazi vuoti tra i comandi (menu, pulsanti, anche quelli della barra di
+# formattazione e dell'account, quando ci sono) sono della finestra (buchi nella regione dell'isola) e rispondono come la sua
+# barra del titolo; i comandi restano dell'isola. Gli spazi si trovano come fa la mod (VerticalTabs.cpp, MenuBarHoles): tra
+# i rettangoli dei comandi, larghi almeno 16 DIP a 4 DIP dai comandi (quindi 24 DIP in tutto).
+function Get-MenuBarGaps([int64]$Hwnd, [int64]$MenuBarHwnd) {
+    $scale = [NpxGeo]::GetDpiForWindow([IntPtr]$Hwnd) / 96.0
+    $ir = Get-WinRect $MenuBarHwnd
+    $types = @($CT::MenuBar, $CT::MenuItem, $CT::Button, $CT::SplitButton, $CT::ComboBox, $CT::Edit, $CT::CheckBox, $CT::RadioButton, $CT::Hyperlink)
+    $spans = @(foreach ($e in @($AE::FromHandle([IntPtr]$MenuBarHwnd).FindAll($TS::Descendants, [Windows.Automation.Condition]::TrueCondition))) {
+            $c = $e.Current
+            if ($types -notcontains $c.ControlType -or $c.IsOffscreen) { continue }
+            $r = $c.BoundingRectangle
+            if ($r.IsEmpty -or $r.Width -le 0 -or $r.Height -le 0) { continue }
+            $cy = $r.Y + $r.Height / 2
+            if ($cy -lt $ir.Top -or $cy -gt $ir.Bottom) { continue } # (popup e suggerimenti fuori dalla riga)
+            [pscustomobject]@{ L = [double]$r.X; R = [double]($r.X + $r.Width); Cy = $cy; Type = $c.ControlType.ProgrammaticName.Replace('ControlType.', '') }
+        }) | Sort-Object L
+    $gaps = @()
+    $occupied = $null; $left = $null
+    foreach ($s in $spans) {
+        if ($null -ne $occupied -and $s.L - $occupied -ge 24 * $scale + 4) { $gaps += [pscustomobject]@{ L = $occupied; R = $s.L; Before = $left; After = $s } }
+        if ($null -eq $occupied -or $s.R -gt $occupied) { $occupied = $s.R; $left = $s }
+    }
+    [pscustomobject]@{ Gaps = $gaps; Spans = $spans; Scale = $scale }
+}
 function Test-MenuBarGap([int64]$Hwnd, [int64]$MenuBarHwnd, [string]$Label) {
-    $view = Find-Control $Hwnd (UiName 'View' 'Visualizza') $CT::MenuItem
-    $news = Find-Control $Hwnd (UiName "What's new" 'Novità') $CT::Button
-    if (-not $view -or -not $news) { Check "${Label}: ""Visualizza"" e ""Novità"" trovati" $false; return }
-    $v = $view.Current.BoundingRectangle; $n = $news.Current.BoundingRectangle
-    $y = [int]($v.Y + $v.Height / 2)
-    $gapX = [int](($v.X + $v.Width + $n.X) / 2)
-    $gapUnder = Get-WindowAtScreen $gapX $y
-    $gapHit = Get-NcHitScreen $Hwnd $gapX $y
-    $edgeX = [int]($v.X + $v.Width + 24) # appena a destra di "Visualizza"
-    $edgeOk = (Get-WindowAtScreen $edgeX $y) -eq $Hwnd -and (Get-NcHitScreen $Hwnd $edgeX $y) -eq 2
-    Check "${Label}: lo spazio vuoto tra i menu e ""Novità"" trascina la finestra" ($gapUnder -eq $Hwnd -and $gapHit -eq 2 -and $edgeOk) ("x={0}: sotto il punto la finestra {1}, risposta {2}; vicino a ""Visualizza"" {3}" -f $gapX, ($gapUnder -eq $Hwnd), $gapHit, $edgeOk)
-    $viewUnder = Get-WindowAtScreen ([int]($v.X + $v.Width / 2)) $y
-    $newsUnder = Get-WindowAtScreen ([int]($n.X + $n.Width / 2)) ([int]($n.Y + $n.Height / 2))
-    Check "${Label}: ""Visualizza"" e ""Novità"" restano cliccabili" ($viewUnder -eq $MenuBarHwnd -and $newsUnder -eq $MenuBarHwnd) ("sotto Visualizza {0:x}, sotto Novità {1:x}, barra {2:x}" -f $viewUnder, $newsUnder, $MenuBarHwnd)
+    $info = Get-MenuBarGaps $Hwnd $MenuBarHwnd
+    if ($info.Spans.Count -eq 0) { Check "${Label}: comandi della barra dei menu trovati" $false; return }
+    $gap = $info.Gaps | Sort-Object { $_.R - $_.L } -Descending | Select-Object -First 1
+    if (-not $gap) { Check "${Label}: nessuno spazio vuoto tra i comandi (niente da trascinare)" $true ("{0} comandi" -f $info.Spans.Count); return }
+    # Ai due bordi del buco (4 DIP dai comandi, più 3 px) e a metà
+    $pad = [int][math]::Ceiling(4 * $info.Scale) + 3
+    $y = [int]$gap.Before.Cy
+    $probe = foreach ($x in @([int][math]::Ceiling($gap.L + $pad), [int](($gap.L + $gap.R) / 2), [int][math]::Floor($gap.R - $pad))) {
+        [pscustomobject]@{ X = $x; Under = (Get-WindowAtScreen $x $y) -eq $Hwnd; Hit = Get-NcHitScreen $Hwnd $x $y }
+    }
+    $ok = @($probe | Where-Object { -not $_.Under -or $_.Hit -ne 2 }).Count -eq 0
+    Check "${Label}: lo spazio vuoto tra i comandi trascina la finestra" $ok ("spazio tra {0} e {1}, x {2}-{3}: {4}" -f $gap.Before.Type, $gap.After.Type, [int]$gap.L, [int]$gap.R,
+        (($probe | ForEach-Object { 'x={0} finestra {1} risposta {2}' -f $_.X, $_.Under, $_.Hit }) -join '; '))
+    $beforeUnder = Get-WindowAtScreen ([int](($gap.Before.L + $gap.Before.R) / 2)) $y
+    $afterUnder = Get-WindowAtScreen ([int](($gap.After.L + $gap.After.R) / 2)) ([int]$gap.After.Cy)
+    Check "${Label}: i comandi ai due lati restano cliccabili" ($beforeUnder -eq $MenuBarHwnd -and $afterUnder -eq $MenuBarHwnd) ("sotto {0} {1:x}, sotto {2} {3:x}, barra {4:x}" -f $gap.Before.Type, $beforeUnder, $gap.After.Type, $afterUnder, $MenuBarHwnd)
 }
 function Open-ColorMenu([int64]$Hwnd, [string]$Prefix) {
     Show-ContextMenu $Hwnd $Prefix
@@ -431,7 +456,7 @@ try {
     # --- Menu contestuale nativo (via UI Automation) -------------------------------------------
     Show-ContextMenu $h 'npx-test-3'
     $names = @(Get-MenuItems | ForEach-Object { $_.Current.Name })
-    $wanted = (UiName 'New tab' 'Nuova scheda'), (UiName 'Close tab' 'Chiudi scheda'), 'Chiudi altre schede', (UiName 'Close tabs to the right' 'Chiudi schede a destra')
+    $wanted = (UiName 'New tab' 'Nuova scheda'), (UiName 'Close tab' 'Chiudi scheda'), (UiName 'Close other tabs' 'Chiudi altre schede'), (UiName 'Close tabs to the right' 'Chiudi schede a destra')
     Check 'Menu contestuale nativo con le 4 voci' (@($wanted | Where-Object { $names -contains $_ }).Count -eq 4)
     Invoke-MenuItem (UiName 'Close tabs to the right' 'Chiudi schede a destra')
     Check '"Chiudi schede a destra" agisce sulla scheda giusta' (Wait-Until { (Join-Order (Get-NativeOrder $h)) -eq "$U,npx-test-1,npx-test-2,npx-test-3" }) (Join-Order (Get-NativeOrder $h))
@@ -631,7 +656,8 @@ try {
     try { Invoke-MenuCommand $h (UiName 'Edit' 'Modifica') (UiName 'Find' 'Trova') } catch { }
     $okFind = Wait-Until { $script:fb = Get-FindBarState $h; $script:fb -and $script:fb.Controls -ge 5 }
     Check 'Barra di ricerca (Ctrl+F): intera, centrata sull''editor, dentro l''editor' ($okFind -and $fb.Outside.Count -eq 0 -and [math]::Abs($fb.CenterDelta) -le 2 -and $fb.Island.X -ge $fb.Editor.X -and $fb.Island.Y -eq $fb.Editor.Y) (Format-FindBar $fb)
-    $okReplace = (Invoke-FindBarButton $h '*sostituzione*') -and (Wait-Until { $script:fb = Get-FindBarState $h; $script:fb -and $script:fb.Controls -ge 8 })
+    # (pulsanti della barra per AutomationId: ExpandButton apre le opzioni di sostituzione, CloseButton la chiude)
+    $okReplace = (Invoke-FindBarButton $h 'ExpandButton') -and (Wait-Until { $script:fb = Get-FindBarState $h; $script:fb -and $script:fb.Controls -ge 8 })
     Check 'Barra di ricerca in modalità Sostituisci (più alta): intera' ($okReplace -and $fb.Outside.Count -eq 0 -and [math]::Abs($fb.CenterDelta) -le 2) (Format-FindBar $fb)
     Invoke-PanelToggle $h $true
     Wait-Stable { (Get-IniValue 'Collapsed') -eq '1' } | Out-Null
@@ -647,12 +673,12 @@ try {
     [void][NpxPos]::SetWindowPos([IntPtr]$h, [IntPtr]::Zero, $w0.Left, $w0.Top, $narrow, ($w0.Bottom - $w0.Top), 0x0014)
     $okNarrow = Wait-Until { $script:fb = Get-FindBarState $h; $script:fb -and $script:fb.Island.W -gt $script:fb.Editor.W -and $script:fb.Outside.Count -eq 0 }
     Start-Sleep -Milliseconds 800
-    $colors = Get-EditorTopColors $h
+    $colors = Get-EditorPrintColors $h
     Check 'Finestra stretta: barra di ricerca intera, sopra la colonna' ($okNarrow -and $fb.Island.X -lt $fb.Editor.X -and $fb.Island.X -ge $w0.Left) (Format-FindBar $fb)
     Check '  in cima all''editor il suo colore, niente fascia nera' ($colors.Top.ToArgb() -eq $colors.Middle.ToArgb() -and ($colors.Top.R + $colors.Top.G + $colors.Top.B) -gt 0) ("cima #{0:X2}{1:X2}{2:X2}, metà #{3:X2}{4:X2}{5:X2}" -f $colors.Top.R, $colors.Top.G, $colors.Top.B, $colors.Middle.R, $colors.Middle.G, $colors.Middle.B)
     [void][NpxPos]::SetWindowPos([IntPtr]$h, [IntPtr]::Zero, $w0.Left, $w0.Top, ($w0.Right - $w0.Left), ($w0.Bottom - $w0.Top), 0x0014)
     Wait-Until { $script:fb = Get-FindBarState $h; $script:fb -and [math]::Abs($script:fb.CenterDelta) -le 2 } | Out-Null
-    [void](Invoke-FindBarButton $h 'Esci da Trova*')
+    [void](Invoke-FindBarButton $h 'CloseButton')
     Check 'Barra di ricerca chiusa' (Wait-Until { -not (Get-FindBarIsland $h) })
 
     # --- Pulsante "Torna su" ---------------------------------------------------------------------
@@ -679,7 +705,7 @@ try {
     $inCorner = { param($i, $e) ($i.X + $i.W) -le ($e.X + $e.W) -and ($i.X + $i.W) -ge ($e.X + $e.W - 80) -and ($i.Y + $i.H) -le ($e.Y + $e.H) -and ($i.Y + $i.H) -ge ($e.Y + $e.H - 100) }
     Check 'Torna su: nell''angolo in basso a destra dell''editor' (& $inCorner $isl $ed) ("pulsante {0},{1} {2}x{3}, editor fino a {4},{5}" -f $isl.X, $isl.Y, $isl.W, $isl.H, ($ed.X + $ed.W), ($ed.Y + $ed.H))
     $button = Get-BackToTopButton $h
-    Check 'Torna su: pulsante accessibile con nome' ($button -and $button.Current.Name -eq 'Torna su')
+    Check 'Torna su: pulsante accessibile con nome' ($button -and $button.Current.Name -eq (UiName 'Back to top' 'Torna su'))
     $from = Get-FirstVisibleText $h 3
     Invoke-Element $button
     Check 'Torna su: il clic riporta all''inizio del documento' (Wait-Until { (Get-FirstVisibleText $h 3) -eq '001' }) ("da {0} a {1}" -f $from, (Get-FirstVisibleText $h 3))
@@ -689,7 +715,11 @@ try {
     Send-EditorPageDown $h 2
     Wait-Until { Test-BackToTopShown $h } | Out-Null
     Select-Element (Find-PanelRow $h 'npx-test-1')
-    Check 'Torna su: su una scheda in cima al documento sparisce' (Wait-Until { (Get-SelectedNative $h) -eq 'npx-test-1' -and -not (Test-BackToTopShown $h) })
+    $topTabOk = Wait-Until { (Get-SelectedNative $h) -eq 'npx-test-1' -and -not (Test-BackToTopShown $h) }
+    $vsb = Get-VScrollBar $h; $btt = Get-BackToTopIsland $h; $es = Get-EditorScroll $h
+    Check 'Torna su: su una scheda in cima al documento sparisce' $topTabOk ("scheda {0}, pulsante mostrato {1} (isola visibile {2}, trasparente {3}), barra verticale {4}, editor {5}" -f (Get-SelectedNative $h),
+        (Test-BackToTopShown $h), $(if ($btt) { $btt.Visible } else { '-' }), $(if ($btt) { Test-IslandClickThrough $btt.Hwnd } else { '-' }), $(if ($vsb) { "isola visibile, cima $($vsb.Top)" } else { 'nascosta' }),
+        $(if ($es) { "pos $($es.Pos) di $($es.End)" } else { '-' }))
     Select-Element (Find-PanelRow $h "${NpxTestPrefix}scorri")
     Check 'Torna su: tornando sulla scheda scorsa ricompare' (Wait-Until { (Get-SelectedNative $h) -eq "${NpxTestPrefix}scorri" -and (Test-BackToTopShown $h) })
     # Barra di scorrimento verticale: con la riga del titolo nascosta la sua isola sale con l'editor, ma il Blocco note fissa
@@ -877,12 +907,25 @@ try {
         [pscustomobject]@{ VMax = $v.nMax; VPage = [int]$v.nPage; HMax = $o.nMax; Text = ("V max {0} pagina {1}, O max {2}" -f $v.nMax, $v.nPage, $o.nMax) }
     }
     $start = & $vInfo
+    $phantomStart = Get-Date
     $wrFix = Get-WinRect $h
     # Più alta di quanto serve perché il documento ci stia (se già ci sta, basta il controllo)
     $grow = if ($start.VPage -gt 0 -and $start.VMax -ge $start.VPage) { $start.VMax - $start.VPage + 120 } else { 0 }
     if ($grow -gt 0) { [void][NpxPos]::SetWindowPos([IntPtr]$h, [IntPtr]::Zero, $wrFix.Left, $wrFix.Top, $wrFix.Right - $wrFix.Left, $wrFix.Bottom - $wrFix.Top + $grow, 0x0014) }
     $fixed = Wait-Until { $i = & $vInfo; $i.VPage -eq 0 -or $i.VMax -lt $i.VPage } 4000
-    Check 'Documento a righe larghe che ci sta in altezza: nessuna corsa verticale fasulla' $fixed ("all'inizio {0}; finestra +{1} px: {2}; barra XAML {3}" -f $start.Text, $grow, (& $vInfo).Text, $(if (Get-ScrollBarViewer $h) { 'visibile' } else { 'nascosta' }))
+    # Diagnostica: righe, posizione interna della RichEdit, altezza della superficie, righe di ScrollRangeFix nel registro
+    $phantomDiag = ''
+    if (-not $fixed) {
+        $diagSurface = [NpxKit]::FindWindowEx([IntPtr](Get-EditorRect $h).Hwnd, [IntPtr]::Zero, 'RichEditD2DPT', [NullString]::Value)
+        $lineCount = [IntPtr]::Zero
+        [void][NpxRemote]::SendMessageTimeoutW($diagSurface, 0x00BA, [IntPtr]::Zero, [IntPtr]::Zero, 2, 300, [ref]$lineCount) # EM_GETLINECOUNT
+        $diagProbe = New-RichScrollProbe $diagSurface
+        try { $diagPos = Get-RichScrollPos $diagProbe } finally { Remove-RichScrollProbe $diagProbe }
+        $diagRect = Get-WinRect $diagSurface
+        $srf = @(Get-ModLog 200 'ScrollRangeFix' -Since $phantomStart | ForEach-Object { ($_ -split '\] ', 2)[1] }) -join ' / '
+        $phantomDiag = "; righe {0}, scroll y {1}, superficie alta {2}; registro: {3}" -f [int64]$lineCount, $(if ($diagPos) { $diagPos.Y } else { '?' }), ($diagRect.Bottom - $diagRect.Top), $(if ($srf) { $srf } else { 'niente' })
+    }
+    Check 'Documento a righe larghe che ci sta in altezza: nessuna corsa verticale fasulla' $fixed ("all'inizio {0}; finestra +{1} px: {2}; barra XAML {3}{4}" -f $start.Text, $grow, (& $vInfo).Text, $(if (Get-ScrollBarViewer $h) { 'visibile' } else { 'nascosta' }), $phantomDiag)
     # E la rotella non lo porta nel vuoto (senza corsa le righe non si muovono; il ripiego a pixel andava oltre la fine)
     $fitsSurface = [NpxKit]::FindWindowEx([IntPtr](Get-EditorRect $h).Hwnd, [IntPtr]::Zero, 'RichEditD2DPT', [NullString]::Value)
     $fitsProbe = New-RichScrollProbe $fitsSurface

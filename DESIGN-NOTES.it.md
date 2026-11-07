@@ -463,6 +463,22 @@ riavvii dei giorni prima (registro della mod) non succedeva. Dopo un riavvio con
 schede: quella finestra si può chiudere (non ha nulla dentro). Gli helper sono in `tools\test\TestKit.ps1`;
 `VTabsNotepadUiaTool.exe` (compilato in `build\test`) apre il menu contestuale via UI Automation.
 
+**Suite di nuovo tutta verde (2026-11-07, 134/134).** Con Windows passato all'inglese 12 controlli fallivano, uguali
+con la 1.2.3 e con la 1.3.0, e nessuno per colpa della mod:
+- nomi dell'interfaccia ancora in italiano ("Chiudi altre schede", "Torna su"): ora con `UiName`, e la barra di
+  ricerca si comanda per AutomationId (`ExpandButton` apre le opzioni di sostituzione, `CloseButton` la chiude);
+- `TestKit.ps1` aveva due `Get-EditorTopColors`: la seconda (PrintWindow, per la barra di ricerca su una finestra
+  stretta) copriva la prima (colori dallo schermo), e i controlli sulla fascia in cima all'editor leggevano campi
+  vuoti ("?"). La seconda ora si chiama `Get-EditorPrintColors`;
+- lo spazio vuoto della barra dei menu salita si cercava a metà tra "Visualizza" e "Novità", ma lì ora ci sono i
+  pulsanti della barra di formattazione. `Get-MenuBarGaps` trova gli spazi come la mod (`MenuBarHoles`: tra i
+  rettangoli dei comandi, almeno 16 DIP a 4 DIP dai comandi) e il controllo prova i due bordi e il centro del più
+  largo, più i comandi ai due lati; da espanso la barra non ha spazi (detto nel risultato);
+- la barra di ricerca non si chiudeva (nome italiano) e restava aperta sopra l'editor: il Blocco note sposta il
+  testo sotto di lei e ne tiene i 75 px come corsa verticale, così fallivano anche "Torna su" su una scheda in cima
+  e la corsa fasulla ("V max 1388 pagina 1313", rotella "0 -> 75"). Quei 75 px con la barra di ricerca aperta li ha
+  anche il Blocco note senza mod (provato con la finestra esclusa: 1375/1300): non sono un difetto da correggere.
+
 ## Stato
 
 **2026-11-06, barra di ricerca tagliata (Ctrl+F), segnalata dall'utente:** si vedeva solo il pezzo centrale. Mancavano a
@@ -916,8 +932,8 @@ Prove (scratchpad): `np-unload-test.ps1`, 23/23: tre cicli Esci/riavvio con una 
 fuori in 0,7-1 s, processo vivo, finestre e schede intatte, la mod rientra e ritrova finestre, barre dei menu e
 barre di scorrimento visibili; menu di sistema aperto: lo scaricamento aspetta e finisce appena si chiude; tray
 chiusa e subito riaperta. Suite `tools\test\Run-Tests.ps1` (portata ai nomi inglesi con `UiName`): 123 OK e gli
-stessi 12 fallimenti della 1.2.3 pubblicata, provata con la stessa suite (nomi italiani rimasti, controlli sui pixel
-e sulla corsa delle barre legati all'ambiente). Un aggiornamento ora entra senza riavviare il Blocco note.
+stessi 12 fallimenti della 1.2.3 pubblicata, provata con la stessa suite; erano tutti della suite, poi corretta (vedi
+"Test automatici dal vivo"): 134/134. Un aggiornamento ora entra senza riavviare il Blocco note.
 
 Per rimuovere tutto: chiudere la
 tray, togliere "Avvia con Windows" se attivato, cancellare `%LOCALAPPDATA%\VTabsNotepad` e la cartella
