@@ -17,7 +17,8 @@ namespace npx
     // Sempre attiva: l'opzione nella tray è stata tolta su richiesta dell'utente. I valori originali si ricordano e tornano
     // solo se la finestra esce dalla mod (gate della modalità sviluppo, dev-windows.txt) o la mod si stacca.
     //
-    // Tutte le barre del thread della finestra: editor, menu, elenchi, il nostro pannello. Vive e viene usata interamente
+    // Le barre del thread della finestra che la mod conosce (ModCore::ScrollBarsOnCurrentThread): editor, barra delle schede,
+    // barra dei menu, il nostro pannello e i popup aperti di queste isole (menu, elenchi). Vive e viene usata interamente
     // sul thread UI della finestra.
     class ScrollBarHover
     {
@@ -29,7 +30,8 @@ namespace npx
         ScrollBarHover& operator=(ScrollBarHover const&) = delete;
 
         // ScrollBar vive sul thread della finestra.
-        std::function<std::vector<winrt::Microsoft::UI::Xaml::Controls::Primitives::ScrollBar>()> scrollBarsProvider;
+        // full=false: solo le barre che cambiano spesso (popup, editor); full=true anche il resto degli alberi.
+        std::function<std::vector<winrt::Microsoft::UI::Xaml::Controls::Primitives::ScrollBar>(bool full)> scrollBarsProvider;
 
         void Apply(Settings const& settings);
         // Controllo periodico (500 ms): barre nuove o che hanno appena ricevuto il modello.
@@ -55,7 +57,7 @@ namespace npx
         };
 
         HWND MainWindow();
-        void PatchAll();
+        void PatchAll(bool full);
         int RestoreAll(); // animazioni rimesse
         // false se il modello non c'è ancora o un'animazione non si è lasciata cambiare (si riprova).
         bool Patch(winrt::Microsoft::UI::Xaml::Controls::Primitives::ScrollBar const& bar, Bar& entry);
@@ -65,5 +67,6 @@ namespace npx
         bool m_enabled = false;
         std::vector<Bar> m_bars;
         bool m_loggedFirst = false;
+        unsigned m_ticks = 0; // controlli periodici: uno su quattro (2 s) guarda gli alberi interi
     };
 }

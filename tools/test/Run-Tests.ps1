@@ -33,6 +33,8 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\TestKit.ps1"
+# Nome della scheda senza titolo nella lingua di Windows (UIA e pannello seguono la lingua dell'interfaccia)
+$U = UiName 'Untitled' 'Senza titolo'
 
 $results = [System.Collections.Generic.List[object]]::new()
 function Check([string]$Name, [bool]$Ok, [string]$Detail = '') {
@@ -71,8 +73,8 @@ function Test-RowHasInitial([int64]$Hwnd, [string]$Prefix) {
 # Barra dei menu nella riga del titolo: lo spazio vuoto tra "Visualizza" e "Novità" è della finestra (sotto il punto c'è
 # lei, non l'isola: buco nella regione) e risponde come barra del titolo; "Visualizza" e "Novità" restano dell'isola
 function Test-MenuBarGap([int64]$Hwnd, [int64]$MenuBarHwnd, [string]$Label) {
-    $view = Find-Control $Hwnd 'Visualizza' $CT::MenuItem
-    $news = Find-Control $Hwnd 'Novità' $CT::Button
+    $view = Find-Control $Hwnd (UiName 'View' 'Visualizza') $CT::MenuItem
+    $news = Find-Control $Hwnd (UiName "What's new" 'Novità') $CT::Button
     if (-not $view -or -not $news) { Check "${Label}: ""Visualizza"" e ""Novità"" trovati" $false; return }
     $v = $view.Current.BoundingRectangle; $n = $news.Current.BoundingRectangle
     $y = [int]($v.Y + $v.Height / 2)
@@ -88,7 +90,7 @@ function Test-MenuBarGap([int64]$Hwnd, [int64]$MenuBarHwnd, [string]$Label) {
 }
 function Open-ColorMenu([int64]$Hwnd, [string]$Prefix) {
     Show-ContextMenu $Hwnd $Prefix
-    $sub = Find-InProcess 'Colore scheda'
+    $sub = Find-InProcess (UiName 'Tab color' 'Colore scheda')
     if ($sub) {
         try { $sub.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern).Expand() } catch { Invoke-Any $sub }
         Start-Sleep -Milliseconds 600
@@ -115,7 +117,7 @@ function Set-TestOpt([string]$Section, [string]$Key, [string]$Value) {
 # il test lo annota come una sua scrittura (così, anche se si interrompe a metà, torna il valore originale)
 function Invoke-PanelToggle([int64]$Hwnd, [bool]$Collapse) {
     $testWrites['Collapsed'] = @{ Section = 'VerticalTabs'; Value = $(if ($Collapse) { '1' } else { '0' }) }
-    Invoke-Element (Find-Control $Hwnd $(if ($Collapse) { 'Comprimi schede' } else { 'Espandi schede' }) $CT::Button)
+    Invoke-Element (Find-Control $Hwnd $(if ($Collapse) { (UiName 'Collapse tabs' 'Comprimi schede') } else { (UiName 'Expand tabs' 'Espandi schede') }) $CT::Button)
 }
 $cursorStart = Get-Cursor
 $h = 0
@@ -143,7 +145,7 @@ try {
     $reopenIsolated = $true
     Write-Host 'Creo la finestra di prova...'
     $h = New-TestWindow -Files 5 -OnCreated { param($hwnd) if ($onlyTestWindow) { Set-Content -LiteralPath $devWindows -Value ([string]$hwnd) -Encoding ASCII } }
-    $expected = 'Senza titolo,npx-test-1,npx-test-2,npx-test-3,npx-test-4,npx-test-5'
+    $expected = "$U,npx-test-1,npx-test-2,npx-test-3,npx-test-4,npx-test-5"
 
     # --- Allineamento e selezione -------------------------------------------------------------
     Check 'Pannello allineato alle schede native' ((Join-Order (Get-PanelOrder $h)) -eq $expected) (Join-Order (Get-PanelOrder $h))
@@ -163,23 +165,23 @@ try {
     Check 'Scheda attiva: peso e colore del titolo come nelle schede orizzontali' ($nativeSel -and $panelSel -and $nativeSel.Weight -eq $panelSel.Weight -and $nativeSel.Color -eq $panelSel.Color -and $nativeSel.Weight -gt $nativeFont.Weight) ("schede {0}, pannello {1}" -f (& $fontText $nativeSel), (& $fontText $panelSel))
 
     # --- "+" subito sotto l'ultima scheda, solo icona, centrato -----------------------------------
-    $plus = Find-Control $h 'Nuova scheda' $CT::Button
+    $plus = Find-Control $h (UiName 'New tab' 'Nuova scheda') $CT::Button
     $last = (Get-PanelRows $h)[-1].Current.BoundingRectangle
     $pb = $plus.Current.BoundingRectangle
     $lb = (Get-PanelList $h).Current.BoundingRectangle
     Check '"+" subito sotto l''ultima scheda' ($pb.Y -ge $last.Bottom - 2 -and $pb.Y - $last.Bottom -le 12) ("ultima riga fino a {0}, ""+"" da {1}" -f [int]$last.Bottom, [int]$pb.Y)
     $label = $plus.FindFirst($TS::Descendants, (New-Object Windows.Automation.AndCondition(
-                (New-Object Windows.Automation.PropertyCondition($AE::NameProperty, 'Nuova scheda')),
+                (New-Object Windows.Automation.PropertyCondition($AE::NameProperty, (UiName 'New tab' 'Nuova scheda'))),
                 (New-Object Windows.Automation.PropertyCondition($AE::ControlTypeProperty, $CT::Text)))))
     Check '"+" centrato e senza scritta' ([math]::Abs(($pb.X + $pb.Width / 2) - ($lb.X + $lb.Width / 2)) -le 3 -and -not $label) ("centro + {0}, centro elenco {1}" -f [int]($pb.X + $pb.Width / 2), [int]($lb.X + $lb.Width / 2))
-    1..18 | ForEach-Object { Invoke-Element (Find-Control $h 'Nuova scheda' $CT::Button); Start-Sleep -Milliseconds 250 }
+    1..18 | ForEach-Object { Invoke-Element (Find-Control $h (UiName 'New tab' 'Nuova scheda') $CT::Button); Start-Sleep -Milliseconds 250 }
     Start-Sleep -Milliseconds 900
     $pr = Get-PanelRect $h
-    $pb = (Find-Control $h 'Nuova scheda' $CT::Button).Current.BoundingRectangle
+    $pb = (Find-Control $h (UiName 'New tab' 'Nuova scheda') $CT::Button).Current.BoundingRectangle
     $lb = (Get-PanelList $h).Current.BoundingRectangle
     Check 'Con molte schede l''elenco scorre e il "+" resta in fondo' ($pb.Bottom -le $pr.Y + $pr.H + 1 -and $pb.Y -ge $lb.Bottom - 2 -and $pb.Bottom -ge $pr.Y + $pr.H - 60) ("elenco fino a {0}, ""+"" {1}-{2}, pannello fino a {3}" -f [int]$lb.Bottom, [int]$pb.Y, [int]$pb.Bottom, ($pr.Y + $pr.H))
     Show-ContextMenu $h 'npx-test-5'
-    Invoke-MenuItem 'Chiudi schede a destra'
+    Invoke-MenuItem (UiName 'Close tabs to the right' 'Chiudi schede a destra')
     Check 'Schede vuote aggiunte richiuse' (Wait-Until { (Join-Order (Get-NativeOrder $h)) -eq $expected -and (Join-Order (Get-PanelOrder $h)) -eq $expected }) (Join-Order (Get-PanelOrder $h))
     Select-Element (Find-PanelRow $h 'npx-test-1')
     Wait-Until { (Get-SelectedNative $h) -eq 'npx-test-1' } | Out-Null
@@ -229,11 +231,11 @@ try {
     $hit = Get-NcHitScreen $h $bandX $bandY
     Check '  fascia del titolo della colonna: lo spazio vuoto è della finestra (barra del titolo)' ($under -eq $h -and $hit -eq 2) ("sotto il punto {0:x} (finestra {1:x}), risposta {2}" -f $under, $h, $hit)
     Check '  sotto la fascia, il pannello' ((Get-WindowAtScreen $bandX ($pr.Y + [int](60 * $panelScale))) -eq $pr.Hwnd)
-    $toggleBox = (Find-Control $h 'Comprimi schede' $CT::Button).Current.BoundingRectangle
+    $toggleBox = (Find-Control $h (UiName 'Collapse tabs' 'Comprimi schede') $CT::Button).Current.BoundingRectangle
     $toggleOk = $toggleBox.Y -lt $pr.Y + 44 * $panelScale -and (Get-WindowAtScreen ([int]($toggleBox.X + $toggleBox.Width / 2)) ([int]($toggleBox.Y + $toggleBox.Height / 2))) -eq $pr.Hwnd
     Check '  il suo pulsante (comprimi), nella fascia, resta del pannello' $toggleOk ("comprimi y={0}" -f [int]$toggleBox.Y)
     # La ricerca nelle schede è stata tolta (2026-11-05): nel pannello non c'è più né la lente né la casella
-    Check '  niente ricerca nel pannello' (-not (Find-Control $h 'Cerca nelle schede' $CT::Button) -and -not (Find-Control $h 'Cerca nelle schede' $CT::Edit))
+    Check '  niente ricerca nel pannello' (-not (Find-Control $h (UiName 'Search tabs' 'Cerca nelle schede') $CT::Button) -and -not (Find-Control $h (UiName 'Search tabs' 'Cerca nelle schede') $CT::Edit))
     # Riga del titolo nascosta (rimasta vuota con le schede nella colonna): la barra dei menu sale nella riga del
     # titolo, fino ai pulsanti della finestra più un tratto libero; l'editor sale con lei e la sua superficie di testo
     # si allunga; i pulsanti della finestra, il tratto libero (trascinabile) e il bordo superiore restano della finestra
@@ -303,7 +305,7 @@ try {
     Check 'Comprimi: l''editor si allarga accanto al pannello' ([math]::Abs($er.X - ($pr.X + $pr.W)) -le 2) "editor x=$($er.X)"
     Check 'Comprimi: stato salvato' ((Get-IniValue 'Collapsed') -eq '1')
     Check 'Comprimi: tutte le schede restano nell''elenco' ((Join-Order (Get-PanelOrder $h)) -eq $expected)
-    Check 'Comprimi: pulsante "Espandi schede"' ($null -ne (Find-Control $h 'Espandi schede' $CT::Button))
+    Check 'Comprimi: pulsante "Espandi schede"' ($null -ne (Find-Control $h (UiName 'Expand tabs' 'Espandi schede') $CT::Button))
     Test-MenuBarGap $h (Get-MenuBarRect $h).Hwnd 'Comprimi: barra dei menu'
     $topCheck = $screen -and [int64][NpxKit]::GetForegroundWindow() -eq $h
     if ($topCheck) {
@@ -330,17 +332,17 @@ try {
     $redBefore = @(Get-Content $colorsFile -ErrorAction SilentlyContinue | Where-Object { $_ -match '=red$' }).Count
     $sub = Open-ColorMenu $h 'npx-test-2'
     Check 'Menu contestuale: voce "Colore scheda"' ($null -ne $sub)
-    $palette = 'Nessuno', 'Grigio', 'Blu', 'Rosso', 'Giallo', 'Verde', 'Rosa', 'Viola', 'Azzurro', 'Arancione'
+    $palette = if ($NpxItalian) { 'Nessuno', 'Grigio', 'Blu', 'Rosso', 'Giallo', 'Verde', 'Rosa', 'Viola', 'Azzurro', 'Arancione' } else { 'None', 'Grey', 'Blue', 'Red', 'Yellow', 'Green', 'Pink', 'Purple', 'Cyan', 'Orange' }
     Check 'Sottomenu con "Nessuno" e 9 colori' (@($palette | Where-Object { Find-InProcess $_ }).Count -eq 10)
-    Invoke-Any (Find-InProcess 'Rosso')
-    Check 'Colore assegnato alla scheda' (Wait-Until { (Find-PanelRow $h 'npx-test-2').Current.ItemStatus -eq 'Colore: Rosso' }) ((Find-PanelRow $h 'npx-test-2').Current.ItemStatus)
+    Invoke-Any (Find-InProcess (UiName 'Red' 'Rosso'))
+    Check 'Colore assegnato alla scheda' (Wait-Until { (Find-PanelRow $h 'npx-test-2').Current.ItemStatus -eq (UiName 'Color: Red' 'Colore: Rosso') }) ((Find-PanelRow $h 'npx-test-2').Current.ItemStatus)
     Check 'Colore salvato in tab-colors.ini' (@(Get-Content $colorsFile -ErrorAction SilentlyContinue | Where-Object { $_ -match '=red$' }).Count -eq $redBefore + 1)
     $red = if ($dark) { [Drawing.Color]::FromArgb(0xF2, 0x8B, 0x82) } else { [Drawing.Color]::FromArgb(0xD9, 0x30, 0x25) }
     Check 'Menu chiuso e striscia nativa fuori vista' ((Wait-Until { @(Get-OpenPopups).Count -eq 0 }) -and (Test-NativeStripHidden $h))
     # Da espanso nessuna icona: il colore è nella tinta della riga (non selezionata). Confronto con una
     # riga senza colore, nello stesso punto relativo (stesse condizioni di disegno).
     Wait-Stable { [math]::Abs((Get-PanelRect $h).W - [double](Get-IniValue 'Width') * $scale) -le 3 } | Out-Null
-    Check 'Da espanso nessuna icona nelle righe' (-not (Test-RowHasInitial $h 'npx-test-3') -and -not (Test-RowHasInitial $h 'Senza titolo') -and -not ($screen -and (Test-ColorInRow $h 'npx-test-2' $red)))
+    Check 'Da espanso nessuna icona nelle righe' (-not (Test-RowHasInitial $h 'npx-test-3') -and -not (Test-RowHasInitial $h $U) -and -not ($screen -and (Test-ColorInRow $h 'npx-test-2' $red)))
     $r = (Find-PanelRow $h 'npx-test-2').Current.BoundingRectangle
     $r4 = (Find-PanelRow $h 'npx-test-4').Current.BoundingRectangle
     $px = [int]($r.X + $r.Width * 0.72); $py = [int]($r.Y + $r.Height / 2)
@@ -406,7 +408,7 @@ try {
     # Da compresso compaiono le icone (iniziali), quella della scheda colorata nel suo colore
     Invoke-PanelToggle $h $true
     Wait-Stable { (Get-IniValue 'Collapsed') -eq '1' -and [math]::Abs((Get-PanelRect $h).W - 56 * $scale) -le 3 } | Out-Null
-    Check 'Da compresso compaiono le icone' ((Test-RowHasInitial $h 'npx-test-3') -and (Test-RowHasInitial $h 'Senza titolo'))
+    Check 'Da compresso compaiono le icone' ((Test-RowHasInitial $h 'npx-test-3') -and (Test-RowHasInitial $h $U))
     if ($screen) { Check 'Da compresso l''icona della scheda colorata è nel suo colore' (Test-ColorInRow $h 'npx-test-2' $red) }
     Save-WindowShot $h (Join-Path $ShotsDir 'compresso-colore.png')
     Invoke-PanelToggle $h $false
@@ -414,7 +416,7 @@ try {
     Check 'Riespanso: di nuovo senza icone' (-not (Test-RowHasInitial $h 'npx-test-3'))
 
     Open-ColorMenu $h 'npx-test-2' | Out-Null
-    Invoke-Any (Find-InProcess 'Nessuno')
+    Invoke-Any (Find-InProcess (UiName 'None' 'Nessuno'))
     Check '"Nessuno" toglie il colore' (Wait-Until { -not (Find-PanelRow $h 'npx-test-2').Current.ItemStatus })
     if ($screen) { Check 'Riga di nuovo senza colore' ($hovered -or (Wait-Until { Test-SameColor (Get-ScreenColor $px $py) $bg 3 })) (Format-Color (Get-ScreenColor $px $py)) }
     Check 'Colore tolto da tab-colors.ini' (@(Get-Content $colorsFile -ErrorAction SilentlyContinue | Where-Object { $_ -match '=red$' }).Count -eq $redBefore)
@@ -429,19 +431,19 @@ try {
     # --- Menu contestuale nativo (via UI Automation) -------------------------------------------
     Show-ContextMenu $h 'npx-test-3'
     $names = @(Get-MenuItems | ForEach-Object { $_.Current.Name })
-    $wanted = 'Nuova scheda', 'Chiudi scheda', 'Chiudi altre schede', 'Chiudi schede a destra'
+    $wanted = (UiName 'New tab' 'Nuova scheda'), (UiName 'Close tab' 'Chiudi scheda'), 'Chiudi altre schede', (UiName 'Close tabs to the right' 'Chiudi schede a destra')
     Check 'Menu contestuale nativo con le 4 voci' (@($wanted | Where-Object { $names -contains $_ }).Count -eq 4)
-    Invoke-MenuItem 'Chiudi schede a destra'
-    Check '"Chiudi schede a destra" agisce sulla scheda giusta' (Wait-Until { (Join-Order (Get-NativeOrder $h)) -eq 'Senza titolo,npx-test-1,npx-test-2,npx-test-3' }) (Join-Order (Get-NativeOrder $h))
+    Invoke-MenuItem (UiName 'Close tabs to the right' 'Chiudi schede a destra')
+    Check '"Chiudi schede a destra" agisce sulla scheda giusta' (Wait-Until { (Join-Order (Get-NativeOrder $h)) -eq "$U,npx-test-1,npx-test-2,npx-test-3" }) (Join-Order (Get-NativeOrder $h))
     Check 'Pannello aggiornato dopo la chiusura' ((Join-Order (Get-PanelOrder $h)) -eq (Join-Order (Get-NativeOrder $h)))
     Check 'Striscia nativa di nuovo fuori vista' ((@(Get-OpenPopups).Count -eq 0) -and (Test-NativeStripHidden $h))
 
     Show-ContextMenu $h 'npx-test-1'
-    Invoke-MenuItem 'Nuova scheda'
-    Check '"Nuova scheda" inserisce accanto alla scheda' (Wait-Until { (Join-Order (Get-NativeOrder $h)) -eq 'Senza titolo,npx-test-1,Senza titolo,npx-test-2,npx-test-3' }) (Join-Order (Get-NativeOrder $h))
+    Invoke-MenuItem (UiName 'New tab' 'Nuova scheda')
+    Check '"Nuova scheda" inserisce accanto alla scheda' (Wait-Until { (Join-Order (Get-NativeOrder $h)) -eq "$U,npx-test-1,$U,npx-test-2,npx-test-3" }) (Join-Order (Get-NativeOrder $h))
     $blank = @(Get-PanelRows $h)[2]
-    Invoke-Element (Find-ByName $blank 'Chiudi scheda')   # X della riga (visibile: è la scheda attiva)
-    Check 'X della riga chiude la scheda' (Wait-Until { (Join-Order (Get-NativeOrder $h)) -eq 'Senza titolo,npx-test-1,npx-test-2,npx-test-3' })
+    Invoke-Element (Find-ByName $blank (UiName 'Close tab' 'Chiudi scheda'))   # X della riga (visibile: è la scheda attiva)
+    Check 'X della riga chiude la scheda' (Wait-Until { (Join-Order (Get-NativeOrder $h)) -eq "$U,npx-test-1,npx-test-2,npx-test-3" })
     Reopen $h 4, 5
 
     if ($RealInput) {
@@ -485,7 +487,7 @@ try {
         $x2, $y2 = Row-Point $h 'npx-test-1' 0.3
         Assert-OnWindow $h $x1 $y1; Assert-OnWindow $h $x2 $y2
         Drag $x1 $y1 $x2 $y2 30 20
-        $order = 'Senza titolo,npx-test-5,npx-test-1,npx-test-2,npx-test-3,npx-test-4'
+        $order = "$U,npx-test-5,npx-test-1,npx-test-2,npx-test-3,npx-test-4"
         Check 'Trascinamento verso l''alto riordina le schede native' (Wait-Until { (Join-Order (Get-NativeOrder $h)) -eq $order }) (Join-Order (Get-NativeOrder $h))
         Check 'Pannello nello stesso ordine' ((Join-Order (Get-PanelOrder $h)) -eq $order)
         Check 'Nuovo ordine salvato nella sessione del Blocco note' (Wait-Until { @(Get-SavedOrders | Where-Object { $_.Order -eq $order }).Count -ge 1 } 6000)
@@ -494,7 +496,7 @@ try {
         $x2, $y2 = Row-Point $h 'npx-test-4' 0.75
         Assert-OnWindow $h $x1 $y1; Assert-OnWindow $h $x2 $y2
         Drag $x1 $y1 $x2 $y2 30 20
-        $order = 'Senza titolo,npx-test-5,npx-test-2,npx-test-3,npx-test-4,npx-test-1'
+        $order = "$U,npx-test-5,npx-test-2,npx-test-3,npx-test-4,npx-test-1"
         Check 'Trascinamento verso il basso' (Wait-Until { (Join-Order (Get-NativeOrder $h)) -eq $order -and (Join-Order (Get-PanelOrder $h)) -eq $order }) (Join-Order (Get-NativeOrder $h))
         Check 'Nessuna ricostruzione d''emergenza dell''elenco' (@(Get-ModLog 50 'rifiutat|ricostruit').Count -eq 0)
 
@@ -507,15 +509,15 @@ try {
         $x2, $y2 = Row-Point $h 'npx-test-4' 0.25
         Assert-OnWindow $h $x1 $y1; Assert-OnWindow $h $x2 $y2
         Drag $x1 $y1 $x2 $y2 20 20
-        $order = 'Senza titolo,npx-test-5,npx-test-2,npx-test-3,npx-test-1,npx-test-4'
+        $order = "$U,npx-test-5,npx-test-2,npx-test-3,npx-test-1,npx-test-4"
         Check 'Trascinamento a pannello compresso' (Wait-Until { (Join-Order (Get-NativeOrder $h)) -eq $order -and (Join-Order (Get-PanelOrder $h)) -eq $order }) (Join-Order (Get-NativeOrder $h))
         Invoke-PanelToggle $h $false
         Wait-Until { (Get-IniValue 'Collapsed') -eq '0' } | Out-Null
         Start-Sleep -Milliseconds 600
 
         Show-ContextMenu $h 'npx-test-3'
-        Invoke-MenuItem 'Chiudi schede a destra'
-        Check 'Il Blocco note usa il nuovo ordine ("a destra" = sotto)' (Wait-Until { (Join-Order (Get-NativeOrder $h)) -eq 'Senza titolo,npx-test-5,npx-test-2,npx-test-3' }) (Join-Order (Get-NativeOrder $h))
+        Invoke-MenuItem (UiName 'Close tabs to the right' 'Chiudi schede a destra')
+        Check 'Il Blocco note usa il nuovo ordine ("a destra" = sotto)' (Wait-Until { (Join-Order (Get-NativeOrder $h)) -eq "$U,npx-test-5,npx-test-2,npx-test-3" }) (Join-Order (Get-NativeOrder $h))
         Reopen $h 1, 4
         Reset-CursorWatch
 
@@ -525,11 +527,11 @@ try {
         Assert-OnWindow $h $cx $cy
         Click-At $cx $cy 'Right'
         Start-Sleep -Milliseconds 900
-        $first = Get-MenuItems | Where-Object { $_.Current.Name -eq 'Nuova scheda' } | Select-Object -First 1
+        $first = Get-MenuItems | Where-Object { $_.Current.Name -eq (UiName 'New tab' 'Nuova scheda') } | Select-Object -First 1
         $b = if ($first) { $first.Current.BoundingRectangle } else { $null }
         Check 'Clic destro: menu nativo sotto il cursore' ($b -and [math]::Abs($b.X - $cx) -le 25 -and [math]::Abs($b.Y - $cy) -le 25) $(if ($b) { "cursore $cx,$cy - prima voce $([int]$b.X),$([int]$b.Y)" })
         Save-WindowShot $h (Join-Path $ShotsDir 'menu-contestuale.png')
-        Invoke-MenuItem 'Chiudi scheda'
+        Invoke-MenuItem (UiName 'Close tab' 'Chiudi scheda')
         Check 'Clic destro + "Chiudi scheda" chiude quella riga' (Wait-Until { (Get-NativeOrder $h) -notcontains 'npx-test-2' })
         Reset-CursorWatch
 
@@ -558,7 +560,7 @@ try {
         Reset-CursorWatch
 
         # --- Scorrimento automatico con molte schede -------------------------------------------
-        $add = Find-Control $h 'Nuova scheda' $CT::Button
+        $add = Find-Control $h (UiName 'New tab' 'Nuova scheda') $CT::Button
         1..20 | ForEach-Object { Invoke-Element $add; Start-Sleep -Milliseconds 300 }
         Select-Element (Find-PanelRow $h 'npx-test-5')
         Start-Sleep -Milliseconds 800
@@ -626,7 +628,7 @@ try {
     # dà: va spostata con l'editor, non ristretta dal bordo sinistro né allungata verso l'alto come lui (restava tagliata
     # ai due lati: mancavano la freccia di "Sostituisci", l'inizio della casella, le opzioni e la chiusura).
     $script:fb = $null
-    try { Invoke-MenuCommand $h 'Modifica' 'Trova' } catch { }
+    try { Invoke-MenuCommand $h (UiName 'Edit' 'Modifica') (UiName 'Find' 'Trova') } catch { }
     $okFind = Wait-Until { $script:fb = Get-FindBarState $h; $script:fb -and $script:fb.Controls -ge 5 }
     Check 'Barra di ricerca (Ctrl+F): intera, centrata sull''editor, dentro l''editor' ($okFind -and $fb.Outside.Count -eq 0 -and [math]::Abs($fb.CenterDelta) -le 2 -and $fb.Island.X -ge $fb.Editor.X -and $fb.Island.Y -eq $fb.Editor.Y) (Format-FindBar $fb)
     $okReplace = (Invoke-FindBarButton $h '*sostituzione*') -and (Wait-Until { $script:fb = Get-FindBarState $h; $script:fb -and $script:fb.Controls -ge 8 })
@@ -953,10 +955,10 @@ try {
     # con una scheda vuota aggiunta e richiusa, così la finestra resta come l'hanno lasciata i casi
     # precedenti.
     $before = @(Get-ModLog 400 'senza file salvato').Count
-    Invoke-Element (Find-Control $h 'Nuova scheda' $CT::Button)
+    Invoke-Element (Find-Control $h (UiName 'New tab' 'Nuova scheda') $CT::Button)
     Wait-Until { @(Get-PanelRows $h).Count -eq @($base -split ',').Count + 1 } 5000 | Out-Null
     $blank = Get-PanelRows $h | Where-Object { Test-Selected $_ } | Select-Object -First 1
-    Invoke-Element (Find-ByName $blank 'Chiudi scheda')
+    Invoke-Element (Find-ByName $blank (UiName 'Close tab' 'Chiudi scheda'))
     Wait-Until { (Join-Order (Get-PanelOrder $h)) -eq $base } 6000 | Out-Null
     Start-Sleep -Milliseconds 1200
     Check 'Scheda vuota chiusa: il Blocco note non la ricorda' (@(Get-ModLog 400 'senza file salvato').Count -gt $before)
@@ -1008,11 +1010,11 @@ try {
     Check 'Senza pannello l''editor torna a tutta larghezza' (Wait-Until { $e = Get-EditorSurface $h; $e.Overhang -le 0 -and $e.Container.W -eq $e.Surface.W -and ($e.Container.X - (Get-WinRect $h).Left) -lt 20 }) ("contenitore x={0} w={1}, superficie w={2}" -f (Get-EditorSurface $h).Container.X, (Get-EditorSurface $h).Container.W, (Get-EditorSurface $h).Surface.W)
     Start-Sleep -Milliseconds 500
     # Una scheda di prova realizzata dalla striscia (con molte schede non lo sono tutte)
-    $nativeTab = Get-NativeTabs $h | Where-Object { $_.Current.Name.StartsWith($NpxTestPrefix) -or $_.Current.Name.StartsWith('Senza titolo') } | Select-Object -First 1
+    $nativeTab = Get-NativeTabs $h | Where-Object { $_.Current.Name.StartsWith($NpxTestPrefix) -or $_.Current.Name.StartsWith($U) } | Select-Object -First 1
     Show-ContextMenu $h $nativeTab.Current.Name -Native
     $names = @(Get-MenuItems | ForEach-Object { $_.Current.Name })
-    Check 'Menu della scheda nativa senza voci aggiunte' (($names -contains 'Chiudi scheda') -and ($names -notcontains 'Colore scheda')) ($names -join ' | ')
-    Invoke-MenuItem 'Nuova scheda' # chiude il menu (scheda vuota in più nella finestra di prova)
+    Check 'Menu della scheda nativa senza voci aggiunte' (($names -contains (UiName 'Close tab' 'Chiudi scheda')) -and ($names -notcontains 'Colore scheda')) ($names -join ' | ')
+    Invoke-MenuItem (UiName 'New tab' 'Nuova scheda') # chiude il menu (scheda vuota in più nella finestra di prova)
     $sinceGate = Get-Date
     if ($onlyTestWindow) { Set-Content -LiteralPath $devWindows -Value ([string]$h) -Encoding ASCII }
     else {

@@ -16,8 +16,15 @@ namespace npx
     // Processi Notepad (versione Store) in esecuzione.
     std::vector<NotepadProcess> FindNotepadProcesses();
 
-    // true se nel processo è già caricata una VTabsNotepadMod.dll (di qualunque versione).
-    bool IsModLoaded(DWORD pid);
+    // C'è già una VTabsNotepadMod.dll (di qualunque versione) nel processo? Unknown se l'elenco dei moduli non si è potuto
+    // leggere (processo che sta caricando moduli, accesso negato).
+    enum class ModState
+    {
+        Loaded,
+        NotLoaded,
+        Unknown,
+    };
+    ModState GetModState(DWORD pid);
 
     // Copia la DLL della mod in %LOCALAPPDATA%\VTabsNotepad\runtime\<stamp>\ e restituisce il percorso
     // della copia: così la build originale non resta bloccata finché Notepad è aperto.

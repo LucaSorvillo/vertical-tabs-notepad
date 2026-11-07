@@ -26,11 +26,6 @@ namespace npx
         return UiItalian() ? italian : english;
     }
 
-    // CLSID del TAP (Tool Access Point) che il runtime XAML istanzia dentro Notepad
-    // quando chiamiamo InitializeXamlDiagnosticsEx.
-    // {FF5B52B0-369E-4523-8ACA-EACA3766DD29}
-    inline constexpr GUID kTapClsid{ 0xff5b52b0, 0x369e, 0x4523, { 0x8a, 0xca, 0xea, 0xca, 0x37, 0x66, 0xdd, 0x29 } };
-
     // %LOCALAPPDATA%\VTabsNotepad (creata se manca).
     std::wstring DataDirectory();
     // %LOCALAPPDATA%\VTabsNotepad\settings.ini

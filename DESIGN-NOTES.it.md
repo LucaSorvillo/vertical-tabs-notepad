@@ -9,9 +9,10 @@ Prima feature: **schede verticali** (pannello laterale), comode quando ci sono m
 Seconda: il pulsante **"Torna su"** nell'angolo in basso a destra dell'editor.
 
 Non modifica né sostituisce il Blocco note su disco. È un piccolo "mod" in stile Windhawk:
-un launcher con icona nella tray inietta una DLL nel processo del Blocco note e, usando l'API
-ufficiale di diagnostica XAML di WinUI (`InitializeXamlDiagnosticsEx`, la stessa che usa Visual
-Studio per ispezionare la UI), aggiunge l'interfaccia riusando componenti, dati e comandi nativi.
+un launcher con icona nella tray inietta una DLL nel processo del Blocco note e, agganciando alcuni
+metodi pubblici dei controlli WinUI (fino alla 1.2.3 con l'API di diagnostica XAML `InitializeXamlDiagnosticsEx`,
+la stessa che usa Visual Studio per ispezionare la UI), aggiunge l'interfaccia riusando componenti, dati e comandi
+nativi. Con "Esci" la DLL esce dal Blocco note (dalla 1.3.0).
 
 ## Come funziona
 
@@ -99,8 +100,8 @@ processo gestisce tutte le finestre.
      magenta diventava `#FF20FF`). `Notepad.exe` importa la funzione direttamente e la richiama quando la finestra
      viene ingrandita o ripristinata (93 e 91 px al 125%). Un aggancio nella sua tabella delle importazioni ricorda
      ogni richiesta e, con la riga del titolo nascosta, ne limita il margine superiore all'inizio dell'editor
-     (44 px). Quando la colonna si spegne torna la zona del Blocco note. La DLL non viene mai scaricata,
-     quindi l'aggancio non va tolto.
+     (44 px). Quando la colonna si spegne torna la zona del Blocco note. Allo scaricamento della mod
+     ("Esci", dalla 1.3.0) `glass::Uninstall` rimette l'importazione di prima.
      **Pulsanti della finestra alti quanto la riga** (`CaptionButtons.cpp`, lo stesso componente di VTabsExplorer, dove
      è descritto in dettaglio): con la riga del titolo nascosta riduci/ingrandisci/chiudi vanno dalla cima della
      finestra al fondo della barra dei menu salita (44 px al 125%, 35 da ingrandita), come in Chrome e nel Terminale
@@ -225,8 +226,9 @@ Esplora file usa le barre di DirectUI, che non hanno quel ritardo. Vale per tutt
 editor, menu, elenchi, il nostro pannello. È **sempre attiva**, indipendentemente dalle schede verticali:
 l'opzione nella tray (`[ScrollBars] FastHover`) è stata tolta il 2026-11-05 su richiesta dell'utente.
 
-Come funziona (`features/ScrollBarHover.cpp`): la diagnostica XAML segnala ogni `ScrollBar` che nasce
-nel Blocco note; il timer da 500 ms di ogni finestra prende quelle del suo thread che hanno già il
+Come funziona (`features/ScrollBarHover.cpp`): le `ScrollBar` le cerca `ModCore::ScrollBarsOnCurrentThread`
+negli alberi delle isole note della finestra e nei loro popup aperti (fino alla 1.2.3 le segnalava una per una la
+diagnostica XAML); il timer da 500 ms di ogni finestra prende quelle del suo thread che hanno già il
 modello e mette a 0 il `BeginTime` delle animazioni di "Expanded" ed "ExpandedWithoutAnimation",
 ricordando i valori originali per stato e posizione nello storyboard (un `weak_ref` alle animazioni non
 basta: WinUI ne rilascia l'involucro e il riferimento scade). Se la finestra esce dalla mod (modalità
@@ -865,7 +867,59 @@ intero quando cambiano larghezza o compressione. `VerticalTabs::Apply` (che rile
 spegne senza cancellare la cronologia (la cancella solo spenta dal menu). Anche senza settings.ini vale spenta
 (dati eliminati disinstallando: i valori predefiniti sono accesi). All'avvio il launcher cancella il file e tutto
 torna. Solo "Esci" e `--exit` (anche gli installer, che non mostrano più "restano fino alla chiusura") lo
-scrivono; `--exit --keep-mods` no. Prova: scratchpad `np-exit-test.ps1` (solo conteggi, nessun contenuto). Per rimuovere tutto: chiudere la
+scrivono; `--exit --keep-mods` no. Prova: scratchpad `np-exit-test.ps1` (solo conteggi, nessun contenuto).
+
+**"Esci" toglie la mod dal Blocco note** (dalla 1.3.0). Richiesta dell'utente: "se clicco Exit mi aspetto che tutto
+quello che riguarda i nostri due programmi muoia". Con la 1.2.3 la mod si spegneva ma la DLL restava: la diagnostica
+XAML (`InitializeXamlDiagnosticsEx` con questa DLL come TAP) la faceva caricare di nuovo al runtime XAML, che ne
+teneva l'oggetto per sempre. Al suo posto `Discovery.cpp`, come in VTabsExplorer:
+- agganci a voci delle vtable di interfacce WinUI pubbliche, sul thread di una finestra, una volta per processo:
+  `OnApplyTemplate` di `TabView` e `MenuBar` (controlli composti: XAML li chiama attraverso la vtable),
+  `MeasureOverride` di `NotepadXamlUI.ScrollBar` (UserControl del Blocco note: XAML chiama il layout dei tipi
+  "custom" attraverso la vtable, `CFrameworkElement::MeasureCore` con `IsCustomType`) e, solo durante le nostre
+  ricerche UI Automation, `GetAutomationControlTypeCore` dei peer di `TabViewItem` e `MenuBarItem` e
+  `OnCreateAutomationPeer` di `NotepadXamlUI.ScrollBar` (non ha un peer suo: `UIElement::GetOrCreateAutomationPeer`
+  lo richiede a ogni visita, visto nel sorgente di WinUI). La vtable della barra si legge da un'istanza nuova (le
+  113 classi di `NotepadXamlUI` sono attivabili, nel manifest del pacchetto). `ScrollViewer` e `ScrollBar` di
+  sistema non si possono agganciare così: sono classi native di DXaml, che chiamano i propri metodi senza vtable;
+- per le finestre già aperte una ricerca UI Automation (`FindAll` su ogni isola visibile della finestra); un'isola
+  che compare o torna visibile (la barra verticale quando il testo non ci sta più) si guarda una volta;
+- le `ScrollBar` per `ScrollBarHover` non arrivano più dalla diagnostica: si cercano negli alberi delle isole note
+  (barra delle schede, barra dei menu, barre dell'editor, il nostro pannello) e nei loro popup aperti
+  (`GetOpenPopupsForXamlRoot`): popup e barre dell'editor a ogni controllo, il resto ogni 2 s. Le isole che la mod
+  non conosce (pagina Impostazioni, finestre di dialogo) restano col ritardo di sistema.
+
+Lo scaricamento (`ModCore::TryUnload`, dal thread di controllo, riprovato al più ogni 2 s): distacco di ogni
+finestra sul suo thread (`TeardownThread`, `Detach(restore)` di tutte le feature); `discovery::Uninstall`,
+`glass::Uninstall` (l'importazione di `DwmExtendFrameIntoClientArea`) e `pin::Uninstall` (i subclass di
+`PositionPin` sulle finestre degli editor si tolgono dal loro thread, con un messaggio mandato); nessuno dentro il
+nostro codice (`lifetime::Calls()` conta subclass, agganci, procedure di finestra e callback WinEvent: un ciclo
+modale del Blocco note, come la finestra trascinata o il menu di sistema aperto, lo tiene sopra zero); un giro del
+ciclo di ogni thread e 300 ms; contatore del modulo C++/WinRT a zero; classe dei pulsanti della finestra tolta; poi
+`FreeLibraryAndExitThread`. Il thread che riapre una scheda chiusa (`ReopenTab`) tiene un suo riferimento alla DLL
+e lo lascia uscendo. Lato launcher: mutex per processo intorno a "c'è già? se no inietta" e controllo ogni 2 s che
+i processi gestiti abbiano ancora la mod (al più 3 reiniezioni per processo).
+
+**Crash trovato provando** (Blocco note chiuso due volte; la sessione l'ha ripristinata il Blocco note): il lavoro di
+distacco, in coda nel dispatcher con priorità alta, è partito *dentro* `RestoreChildren` della stessa finestra,
+mentre questa aspettava `SetWindowPos` su una finestra dell'editor (thread diverso: durante l'attesa il thread
+riceve i messaggi mandati, e con loro i lavori del dispatcher). Ha distrutto la colonna sotto il ciclo che la stava
+ripristinando (`m_tracked` liberata, accesso non valido alla ripresa). Trovato dal disassemblato (offset nel ciclo
+di `RestoreChildren`, chiamanti `SetActive(false)` e `Check()`, `pin::Clear` riconosciuta dall'hash FNV di un HWND)
+e dall'ordine delle righe del registro, impossibile senza annidamento. Rimedio generale, `ThreadWork` in
+`ModCore.cpp`: ogni lavoro della mod per una finestra (distacco, impostazioni, comandi della tray, registrazione
+delle parti trovate) prima di partire guarda il proprio stack (`RtlCaptureStackBackTrace`, 400 voci): se sotto la
+chiamata attuale c'è codice della nostra DLL, riparte 100 ms dopo da un timer del dispatcher, dal ciclo dei
+messaggi. Le finestre in distacco hanno `closing`: i lavori già in coda non le toccano.
+
+Prove (scratchpad): `np-unload-test.ps1`, 23/23: tre cicli Esci/riavvio con una finestra in più (due thread), DLL
+fuori in 0,7-1 s, processo vivo, finestre e schede intatte, la mod rientra e ritrova finestre, barre dei menu e
+barre di scorrimento visibili; menu di sistema aperto: lo scaricamento aspetta e finisce appena si chiude; tray
+chiusa e subito riaperta. Suite `tools\test\Run-Tests.ps1` (portata ai nomi inglesi con `UiName`): 123 OK e gli
+stessi 12 fallimenti della 1.2.3 pubblicata, provata con la stessa suite (nomi italiani rimasti, controlli sui pixel
+e sulla corsa delle barre legati all'ambiente). Un aggiornamento ora entra senza riavviare il Blocco note.
+
+Per rimuovere tutto: chiudere la
 tray, togliere "Avvia con Windows" se attivato, cancellare `%LOCALAPPDATA%\VTabsNotepad` e la cartella
 del progetto. Il Blocco note non viene mai modificato su disco.
 

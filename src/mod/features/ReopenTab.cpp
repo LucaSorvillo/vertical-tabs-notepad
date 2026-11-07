@@ -2,12 +2,13 @@
 #include "ReopenTab.h"
 
 #include "Interop.h"
+#include "Lifetime.h"
 #include "Log.h"
 #include "Shared.h"
 
 #include <shellapi.h>
 
-#include <thread>
+extern HMODULE g_module;
 
 namespace npx
 {
@@ -229,33 +230,71 @@ namespace npx
             }
         }
 
+        struct OpenRequest
+        {
+            std::wstring path;
+            std::wstring command;
+            std::wstring arguments;
+        };
+
+        void OpenRequested(OpenRequest const& request)
+        {
+            if (!IsExistingFile(request.path))
+            {
+                NPX_LOG(L"ReopenTab: il file della scheda chiusa non c'è più: non si riapre.");
+                return;
+            }
+            const HRESULT init = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+            SHELLEXECUTEINFOW info{ sizeof(info) };
+            info.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_NOASYNC;
+            info.lpVerb = L"open";
+            info.lpFile = request.command.c_str();
+            info.lpParameters = request.arguments.c_str();
+            info.nShow = SW_SHOWNORMAL;
+            if (!ShellExecuteExW(&info))
+            {
+                NPX_LOG(L"ReopenTab: non è stato possibile riaprire il file (errore %lu).", GetLastError());
+            }
+            if (SUCCEEDED(init))
+            {
+                CoUninitialize();
+            }
+        }
+
+        DWORD WINAPI OpenThreadProc(void* parameter)
+        {
+            {
+                const std::unique_ptr<OpenRequest> request(static_cast<OpenRequest*>(parameter));
+                OpenRequested(*request);
+            }
+            // Il thread teneva un riferimento alla DLL (vedi OpenInNotepad): lo lascia uscendo, così la DLL resta nel
+            // processo finché questo codice gira anche se nel frattempo la mod si è tolta ("Esci" della tray).
+            FreeLibraryAndExitThread(g_module, 0);
+        }
+
         void OpenInNotepad(std::wstring const& path)
         {
             // Su un thread a sé: controllare il file e chiamare la shell può costare (molto, su una
             // cartella di rete) e il thread UI della finestra non deve fermarsi. Niente riferimenti
             // all'oggetto: solo le stringhe.
-            std::thread([path, command = NotepadCommand(), arguments = L"\"" + path + L"\""] {
-                if (!IsExistingFile(path))
-                {
-                    NPX_LOG(L"ReopenTab: il file della scheda chiusa non c'è più: non si riapre.");
-                    return;
-                }
-                const HRESULT init = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-                SHELLEXECUTEINFOW info{ sizeof(info) };
-                info.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_NOASYNC;
-                info.lpVerb = L"open";
-                info.lpFile = command.c_str();
-                info.lpParameters = arguments.c_str();
-                info.nShow = SW_SHOWNORMAL;
-                if (!ShellExecuteExW(&info))
-                {
-                    NPX_LOG(L"ReopenTab: non è stato possibile riaprire il file (errore %lu).", GetLastError());
-                }
-                if (SUCCEEDED(init))
-                {
-                    CoUninitialize();
-                }
-            }).detach();
+            auto request = std::make_unique<OpenRequest>(OpenRequest{ path, NotepadCommand(), L"\"" + path + L"\"" });
+            // Un riferimento in più alla DLL per tutta la vita del thread (lo rilascia FreeLibraryAndExitThread).
+            HMODULE module = nullptr;
+            if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, reinterpret_cast<LPCWSTR>(&OpenThreadProc), &module))
+            {
+                NPX_LOG(L"ReopenTab: riferimento alla DLL non preso (errore %lu): il file non si riapre.", GetLastError());
+                return;
+            }
+            if (const HANDLE thread = CreateThread(nullptr, 0, &OpenThreadProc, request.get(), 0, nullptr))
+            {
+                request.release(); // ora è del thread
+                CloseHandle(thread);
+            }
+            else
+            {
+                NPX_LOG(L"ReopenTab: thread per riaprire il file non avviato (errore %lu).", GetLastError());
+                FreeLibrary(module);
+            }
         }
     }
 
@@ -711,6 +750,7 @@ namespace npx
 
     LRESULT CALLBACK ReopenTab::SubclassProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR refData)
     {
+        const lifetime::CallScope call;
         auto* self = reinterpret_cast<ReopenTab*>(refData);
         if (message == WM_NCDESTROY)
         {

@@ -23,6 +23,7 @@
 
 #include <cstdarg>
 #include <cstdio>
+#include <map>
 #include <set>
 #include <string>
 #include <utility>
@@ -68,6 +69,7 @@ namespace
     UINT g_shellHookMsg = 0;
     HICON g_icon = nullptr;
     std::set<std::pair<DWORD, ULONGLONG>> g_handled; // (pid, ora di creazione) già gestiti
+    std::map<std::pair<DWORD, ULONGLONG>, int> g_reinjected; // mod sparita e rimessa (al più 3 volte per processo)
 
     void LauncherLog(const wchar_t* format, ...)
     {
@@ -124,6 +126,33 @@ namespace
         return result;
     }
 
+    // Mutex per processo attorno a "c'è già la mod? se no inietta": la tray e un'iniezione esplicita (--inject-pid) quasi
+    // insieme caricherebbero la DLL due volte, con due riferimenti (con "Esci" la mod ne lascerebbe uno e la DLL
+    // resterebbe nel Blocco note, spenta).
+    struct InjectLock
+    {
+        HANDLE mutex = nullptr;
+        explicit InjectLock(DWORD pid)
+        {
+            const std::wstring name = L"Local\\VTabsNotepad.Inject." + std::to_wstring(pid);
+            mutex = CreateMutexW(nullptr, FALSE, name.c_str());
+            if (mutex)
+            {
+                WaitForSingleObject(mutex, 15000);
+            }
+        }
+        ~InjectLock()
+        {
+            if (mutex)
+            {
+                ReleaseMutex(mutex);
+                CloseHandle(mutex);
+            }
+        }
+        InjectLock(InjectLock const&) = delete;
+        InjectLock& operator=(InjectLock const&) = delete;
+    };
+
     // Inietta la mod in un processo Notepad, se non è già stato fatto.
     void HandleProcess(DWORD pid)
     {
@@ -132,9 +161,15 @@ namespace
         {
             return;
         }
-        g_handled.insert(key);
 
-        if (npx::IsModLoaded(pid))
+        const InjectLock lock(pid);
+        const npx::ModState state = npx::GetModState(pid);
+        if (state == npx::ModState::Unknown)
+        {
+            return; // elenco dei moduli non leggibile adesso: si riprova al prossimo controllo
+        }
+        g_handled.insert(key);
+        if (state == npx::ModState::Loaded)
         {
             LauncherLog(L"PID %lu: mod già presente.", pid);
             return;
@@ -162,17 +197,32 @@ namespace
     {
         const auto processes = npx::FindNotepadProcesses();
 
-        // Dimentica i processi terminati.
+        // Dimentica i processi terminati. In quelli gestiti la mod deve esserci ancora: se non c'è (si è tolta per un
+        // "Esci" di una tray precedente, finito dopo il nostro controllo), la si rimette.
         std::set<std::pair<DWORD, ULONGLONG>> alive;
+        std::set<std::pair<DWORD, ULONGLONG>> running;
         for (auto const& process : processes)
         {
             const std::pair key{ process.pid, ProcessCreationTime(process.pid) };
-            if (g_handled.contains(key))
+            running.insert(key);
+            if (!g_handled.contains(key))
             {
-                alive.insert(key);
+                continue;
             }
+            if (npx::GetModState(process.pid) == npx::ModState::NotLoaded)
+            {
+                int& count = g_reinjected[key];
+                if (count < 3)
+                {
+                    ++count;
+                    LauncherLog(L"PID %lu: la mod non c'è più, si rimette.", process.pid);
+                    continue; // non più gestito: HandleProcess la inietta di nuovo
+                }
+            }
+            alive.insert(key);
         }
         g_handled = std::move(alive);
+        std::erase_if(g_reinjected, [&running](auto const& entry) { return !running.contains(entry.first); });
 
         for (auto const& process : processes)
         {

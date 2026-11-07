@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Glass.h"
 
+#include "Lifetime.h"
 #include "Log.h"
 
 #include <dwmapi.h>
@@ -20,6 +21,8 @@ namespace npx::glass
 
         std::atomic<ExtendFrameFn> g_original{ nullptr };
         std::atomic<bool> g_hooked{ false };
+        void** g_slot = nullptr; // voce delle importazioni sostituita (per rimetterla allo scaricamento)
+        std::mutex g_installLock;
         std::mutex g_lock;
         std::unordered_map<HWND, WindowGlass> g_windows;
 
@@ -52,6 +55,7 @@ namespace npx::glass
 
         HRESULT WINAPI ExtendFrameHook(HWND hwnd, const MARGINS* margins)
         {
+            const lifetime::CallScope call;
             if (!margins)
             {
                 return Original()(hwnd, margins);
@@ -123,27 +127,72 @@ namespace npx::glass
 
     bool Install()
     {
-        static std::once_flag once;
-        std::call_once(once, [] {
-            void** slot = FindImport(GetModuleHandleW(nullptr), "dwmapi.dll", "DwmExtendFrameIntoClientArea");
-            if (!slot)
-            {
-                NPX_LOG(L"Zona vetro: DwmExtendFrameIntoClientArea non è tra le importazioni del Blocco note (niente aggancio).");
-                return;
-            }
+        std::scoped_lock lock(g_installLock);
+        if (g_hooked.load())
+        {
+            return true;
+        }
+        void** slot = FindImport(GetModuleHandleW(nullptr), "dwmapi.dll", "DwmExtendFrameIntoClientArea");
+        if (!slot)
+        {
+            NPX_LOG(L"Zona vetro: DwmExtendFrameIntoClientArea non è tra le importazioni del Blocco note (niente aggancio).");
+            return false;
+        }
+        void* const current = *slot;
+        if (current != reinterpret_cast<void*>(&ExtendFrameHook))
+        {
             DWORD protect = 0;
             if (!VirtualProtect(slot, sizeof(void*), PAGE_READWRITE, &protect))
             {
                 NPX_LOG(L"Zona vetro: tabella delle importazioni non modificabile (%lu).", GetLastError());
-                return;
+                return false;
             }
-            g_original.store(reinterpret_cast<ExtendFrameFn>(*slot)); // prima dello scambio: l'aggancio la usa subito
-            InterlockedExchangePointer(slot, reinterpret_cast<void*>(&ExtendFrameHook));
+            g_original.store(reinterpret_cast<ExtendFrameFn>(current)); // prima dello scambio: l'aggancio la usa subito
+            const bool swapped = InterlockedCompareExchangePointer(slot, reinterpret_cast<void*>(&ExtendFrameHook), current) == current;
             VirtualProtect(slot, sizeof(void*), protect, &protect);
-            g_hooked = true;
-            NPX_LOG(L"Zona vetro: aggancio di DwmExtendFrameIntoClientArea installato.");
-        });
-        return g_hooked;
+            if (!swapped)
+            {
+                NPX_LOG(L"Zona vetro: la voce delle importazioni è cambiata mentre la si agganciava (niente aggancio).");
+                return false;
+            }
+        }
+        g_slot = slot;
+        g_hooked = true;
+        NPX_LOG(L"Zona vetro: aggancio di DwmExtendFrameIntoClientArea installato.");
+        return true;
+    }
+
+    bool Uninstall()
+    {
+        std::scoped_lock lock(g_installLock);
+        if (!g_slot)
+        {
+            g_hooked = false;
+            return true;
+        }
+        void* const original = reinterpret_cast<void*>(g_original.load());
+        DWORD protect = 0;
+        if (!original || !VirtualProtect(g_slot, sizeof(void*), PAGE_READWRITE, &protect))
+        {
+            NPX_LOG(L"Zona vetro: voce delle importazioni non ripristinabile (%lu).", GetLastError());
+            return false;
+        }
+        const bool ours = InterlockedCompareExchangePointer(g_slot, original, reinterpret_cast<void*>(&ExtendFrameHook)) ==
+                          reinterpret_cast<void*>(&ExtendFrameHook);
+        VirtualProtect(g_slot, sizeof(void*), protect, &protect);
+        if (!ours)
+        {
+            NPX_LOG(L"Zona vetro: la voce delle importazioni non è più la nostra (un altro aggancio sopra): la mod non si scarica.");
+            return false;
+        }
+        g_slot = nullptr;
+        g_hooked = false;
+        {
+            std::scoped_lock windows(g_lock);
+            g_windows.clear();
+        }
+        NPX_LOG(L"Zona vetro: importazione originale rimessa.");
+        return true;
     }
 
     bool Hooked()

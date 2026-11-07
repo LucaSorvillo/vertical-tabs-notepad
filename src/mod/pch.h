@@ -3,11 +3,9 @@
 
 #include <windows.h>
 #include <unknwn.h>   // va incluso prima di C++/WinRT per abilitare il supporto COM classico
-#include <ocidl.h>    // IObjectWithSite
 #include <oleauto.h>  // SysStringLen
 #include <commctrl.h> // SetWindowSubclass / DefSubclassProc
 #include <windowsx.h> // GET_X_LPARAM / GET_Y_LPARAM
-#include <xamlOM.h>   // API di diagnostica XAML (IXamlDiagnostics, IVisualTreeService...)
 
 // winbase.h definisce GetCurrentTime() come macro, in conflitto con Storyboard::GetCurrentTime.
 #undef GetCurrentTime

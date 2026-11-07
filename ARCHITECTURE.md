@@ -10,7 +10,7 @@ VTabsNotepad.exe (tray launcher)                    Notepad.exe (one process, al
 ├─ settings.ini, tray menu, autostart               ├─ Win32 frame + XAML islands (tabs, menu bar,
 ├─ finds Notepad processes (Toolhelp)               │  status bar, scrollbars) + RichEdit editor
 └─ injects ──────── CreateRemoteThread ──────────►  └─ VTabsNotepadMod.dll
-                    LoadLibraryW                       ├─ XAML diagnostics (TAP) → visual tree events
+                    LoadLibraryW                       ├─ Discovery: vtable hooks + UI Automation search
                                                        ├─ per window: WindowLayout + features
                                                        └─ own XAML islands (column, back-to-top)
 ```
@@ -27,7 +27,10 @@ windows.
   window) and skips those that already have the module. The DLL is copied to
   `%LOCALAPPDATA%\VTabsNotepad\runtime\<stamp>\` (stamp = time and size of the file) and that copy is loaded
   with `CreateRemoteThread` + `LoadLibraryW`. The installed DLL is therefore never locked, and a new build can
-  be installed while Notepad runs. Old copies are deleted when no longer in use.
+  be installed while Notepad runs. Old copies are deleted when no longer in use. A per-process mutex
+  (`Local\VTabsNotepad.Inject.<pid>`) guards "already loaded? then inject" (two injections at once would leave two
+  references to the DLL), and every 2 s the tray checks that the processes it handled still have the module (it
+  injects it again, at most 3 times per process).
 - `TrayIcon.cpp`: the monochrome icon, drawn with GDI+ at the exact size for the current DPI and theme.
 
 ## Shared code (`src/common`)
@@ -38,14 +41,24 @@ holds paths and names shared by launcher and module.
 
 ## Module (`src/mod`)
 
-### Getting into the XAML tree
+### Finding the windows (`Discovery.cpp`)
 
-`dllmain.cpp` starts a bootstrap thread. `ModCore` calls `InitializeXamlDiagnosticsEx` (exported by
-`Microsoft.Internal.FrameworkUdk.dll`), the API that Visual Studio's Live Visual Tree uses, passing its own
-DLL as the "TAP". The XAML runtime calls `Tap.cpp` (`IObjectWithSite::SetSite`) with an
-`IXamlDiagnostics`. `VisualTreeWatcher` subscribes to `IVisualTreeServiceCallback2`: every element added or
-removed in any window is reported, so each window's `TabsBar` and the other islands are found as soon as they
-exist.
+`dllmain.cpp` starts a bootstrap thread. It waits for the WinUI runtime; then `Discovery` replaces a few entries in
+the method tables (vtables) of public WinUI interfaces, once per process, on a window's UI thread:
+
+- `IFrameworkElementOverrides::OnApplyTemplate` of `TabView` and `MenuBar` (WinUI controls built by composition, so
+  XAML calls them through the vtable): every new tab bar and menu bar presents itself.
+- `IFrameworkElementOverrides::MeasureOverride` of `NotepadXamlUI.ScrollBar` (a Notepad `UserControl`; XAML calls
+  the layout of custom types through the vtable): the editor's scrollbars.
+- For the windows already open, a UI Automation search of each XAML island of the window makes XAML call
+  `GetAutomationControlTypeCore` of the `TabViewItem` and `MenuBarItem` peers and `OnCreateAutomationPeer` of
+  `NotepadXamlUI.ScrollBar` (it has no peer of its own, so XAML asks again at every visit). Outside our searches
+  these hooks do nothing.
+
+Every hook calls the original first and keeps only a weak reference; the rest happens on the window's thread. An
+island that appears or becomes visible later (the vertical scrollbar, the find bar) is searched once. Until 1.2.3
+the module used XAML diagnostics (`InitializeXamlDiagnosticsEx` with its own DLL as the "TAP"): the XAML runtime
+loaded the DLL again and kept its object for good, so the module could never leave Notepad.
 
 The C++/WinRT projections of `NotepadXamlUI.winmd` (public metadata shipped with Notepad) give typed access
 to `TabsBar`, `TabItemViewModel` and their commands (`ReorderTab`, `SelectTabByTabId`, ...).
@@ -99,14 +112,28 @@ to `TabsBar`, `TabItemViewModel` and their commands (`ReorderTab`, `SelectTabByT
 ### Robustness
 
 - Every event handler toward the XAML runtime is guarded: no exception leaves the module's code.
-- The module is never unloaded, because its hooks stay installed. Turning a feature off restores Notepad's
-  layout. A new build takes effect when Notepad restarts.
 - **Exit** (tray menu or `--exit`, which the installer uses too) leaves `tray-exited.txt` in the data folder.
-  The module watches the folder and turns every feature off while the file is there, including the ones that
-  are always on (scroll bars, scroll ranges), without touching `settings.ini`. The closed-tabs history stays.
-  The launcher deletes the file when it starts, and the module turns everything back on. A missing
-  `settings.ini` counts as off too (data deleted when uninstalling: the defaults would be on).
-  `--exit --keep-mods` (build and test scripts) exits without the file.
+  The module watches the folder: every feature turns off (the closed-tabs history stays), then
+  `ModCore::TryUnload` takes everything out and the DLL leaves with `FreeLibraryAndExitThread`:
+  1. On each window's thread (`TeardownThread`): every feature detached (`Detach(restore)`), windows and parts
+     forgotten.
+  2. `discovery::Uninstall` and `glass::Uninstall` put the original vtable and import entries back (only if they
+     are still ours); `pin::Uninstall` removes the subclasses from the editor windows, each from its own thread.
+  3. Nobody inside our code: `lifetime::Calls()` counts the calls in progress in our subclasses, hooks and window
+     procedures (a modal loop of Notepad, such as dragging the window, keeps one on the stack); then one turn of
+     each window thread's message loop and a margin.
+  4. The C++/WinRT module lock (XAML delegates, queued work) must reach zero, and the window class of the caption
+     buttons is unregistered.
+
+  A step that cannot complete is retried at most every 2 s; if the tray starts again first, the module resumes.
+  The thread that reopens a closed tab holds its own reference to the DLL until it ends. A missing `settings.ini`
+  counts as Exit too (data deleted when uninstalling). The launcher deletes `tray-exited.txt` when it starts;
+  `--exit --keep-mods` (build and test scripts) exits without it. Updates take effect without restarting Notepad.
+- **Work never nested in our own code** (`ThreadWork` in `ModCore.cpp`). The dispatcher can run a queued job while
+  the window thread waits inside our code (for example in `SetWindowPos` on an editor window, which belongs to
+  another thread). Detaching a window there destroyed the layout under `RestoreChildren` (a crash found while
+  testing the unload). Before running, each job of the module walks its own stack (`RtlCaptureStackBackTrace`): if
+  the module appears below the current call, the job runs again 100 ms later from the message loop.
 - `TreeDump.cpp` exports the XAML tree (tray menu › "Esporta albero XAML") to diagnose a Notepad update.
 
 ## Languages

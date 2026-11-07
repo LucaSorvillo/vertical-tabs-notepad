@@ -2,6 +2,7 @@
 #include "WheelScroll.h"
 
 #include "Interop.h"
+#include "Lifetime.h"
 #include "Log.h"
 #include "Shared.h"
 
@@ -221,6 +222,7 @@ namespace npx
         // Sui thread degli editor: lo scatto di rotella verticale sul testo diventa uno scorrimento immediato.
         LRESULT CALLBACK GetMessageHook(int code, WPARAM wParam, LPARAM lParam)
         {
+            const lifetime::CallScope call;
             if (code == HC_ACTION && wParam == PM_REMOVE)
             {
                 auto* msg = reinterpret_cast<MSG*>(lParam);

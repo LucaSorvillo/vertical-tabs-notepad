@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "CaptionButtons.h"
 
+#include "Lifetime.h"
 #include "Log.h"
 #include "Shared.h"
 
@@ -211,7 +212,9 @@ namespace npx
 
     bool CaptionButtons::Create(RECT const& rect)
     {
-        static const bool registered = [] {
+        // La registrazione si controlla ogni volta: allo scaricamento della mod la classe si toglie (UnregisterWindowClass)
+        // e, se la mod riparte senza essere uscita, va rifatta.
+        const bool registered = [] {
             WNDCLASSEXW info{ sizeof(info) };
             if (GetClassInfoExW(ThisModule(), kClassName, &info))
             {
@@ -636,6 +639,7 @@ namespace npx
 
     LRESULT CALLBACK CaptionButtons::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
+        const lifetime::CallScope call;
         if (message == WM_NCCREATE)
         {
             const auto* create = reinterpret_cast<CREATESTRUCTW const*>(lParam);
@@ -786,5 +790,15 @@ namespace npx
             break;
         }
         return DefWindowProcW(hwnd, message, wParam, lParam);
+    }
+
+    bool CaptionButtons::UnregisterWindowClass()
+    {
+        WNDCLASSEXW info{ sizeof(info) };
+        if (!GetClassInfoExW(ThisModule(), kClassName, &info))
+        {
+            return true; // mai registrata (o già tolta)
+        }
+        return UnregisterClassW(kClassName, ThisModule()) != FALSE;
     }
 }

@@ -3,6 +3,7 @@
 
 #include "Glass.h"
 #include "Interop.h"
+#include "Lifetime.h"
 #include "Log.h"
 #include "PositionPin.h"
 
@@ -241,6 +242,7 @@ namespace npx
 
     void CALLBACK WindowLayout::WinEventProc(HWINEVENTHOOK hook, DWORD event, HWND hwnd, LONG idObject, LONG idChild, DWORD, DWORD)
     {
+        const lifetime::CallScope call;
         if (idObject != OBJID_WINDOW || idChild != CHILDID_SELF || !hwnd)
         {
             return; // cursore, caret, oggetti MSAA interni: non ci interessano
@@ -272,6 +274,7 @@ namespace npx
 
     LRESULT CALLBACK WindowLayout::SubclassProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR refData)
     {
+        const lifetime::CallScope call;
         auto* self = reinterpret_cast<WindowLayout*>(refData);
         if (message == WM_NCDESTROY)
         {

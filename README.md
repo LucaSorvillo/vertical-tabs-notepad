@@ -115,8 +115,9 @@ Everything is in the tray menu (right-click the icon):
 **Export XAML tree** saves the structure of Notepad's interface to the log folder: useful when you report a
 problem after a Notepad update.
 
-Turning off the vertical tabs brings back Notepad's normal tab strip right away. **Exit** turns everything off in
-every open Notepad window, and it all comes back when you start the app again.
+Turning off the vertical tabs brings back Notepad's normal tab strip right away. **Exit** removes the app from
+every open Notepad window: the module unloads and nothing of it stays inside Notepad. It all comes back when you
+start the app again, also in the windows already open.
 
 ## Privacy
 
@@ -128,16 +129,17 @@ every open Notepad window, and it all comes back when you start the app again.
   - `closed-tabs.txt`: path, position and color of the last 25 closed tabs (saved files only).
   - `logs\`: a diagnostic log, which can contain file names. Have a look before sharing it in an issue.
   - `runtime\`: a copy of the module loaded into Notepad, so the app can be updated while Notepad is open.
-  - `tray-exited.txt`: there only while the app is closed with **Exit**, so the open Notepad windows know to go
-    back to normal.
+  - `tray-exited.txt`: there only while the app is closed with **Exit**, so the module knows to leave the open
+    Notepad windows.
 
 ## How it works
 
 `VTabsNotepad.exe` stays in the tray, watches for Notepad processes and loads `VTabsNotepadMod.dll` into
-them (`CreateRemoteThread` + `LoadLibraryW`). Inside Notepad, the module connects to the WinUI 3 interface
-with `InitializeXamlDiagnosticsEx`, the API that Visual Studio's Live Visual Tree uses. It finds Notepad's
-`TabsBar` (its public metadata ships with Notepad, in `NotepadXamlUI.winmd`) and builds the column in its own
-XAML island. The column is bound to Notepad's tab data and drives Notepad's own commands.
+them (`CreateRemoteThread` + `LoadLibraryW`). Inside Notepad, the module finds the WinUI 3 interface by hooking
+a few public methods of the controls Notepad uses (its tab bar, menu bar and scrollbars), plus a UI Automation
+search for the windows already open. It finds Notepad's `TabsBar` (its public metadata ships with Notepad, in
+`NotepadXamlUI.winmd`) and builds the column in its own XAML island. On **Exit** it puts everything back and
+unloads. The column is bound to Notepad's tab data and drives Notepad's own commands.
 
 The original tab strip stays alive but hidden, so closing a tab still goes through Notepad's "Save changes?"
 dialog. The module moves Notepad's child windows to make room for the column and hides the title row. It also

@@ -99,7 +99,7 @@ namespace npx
         if (wanted && !m_enabled)
         {
             m_enabled = true;
-            PatchAll();
+            PatchAll(/*full*/ true);
         }
         else if (!wanted && m_enabled)
         {
@@ -114,7 +114,7 @@ namespace npx
     {
         if (m_enabled)
         {
-            PatchAll();
+            PatchAll(/*full*/ ++m_ticks % 4 == 0);
         }
     }
 
@@ -128,7 +128,7 @@ namespace npx
         m_bars.clear();
     }
 
-    void ScrollBarHover::PatchAll()
+    void ScrollBarHover::PatchAll(bool full)
     {
         if (!scrollBarsProvider)
         {
@@ -137,7 +137,7 @@ namespace npx
         std::erase_if(m_bars, [](Bar const& entry) { return !entry.bar.get(); });
         int bars = 0;
         int timelines = 0;
-        for (auto const& bar : scrollBarsProvider())
+        for (auto const& bar : scrollBarsProvider(full))
         {
             Bar* entry = nullptr;
             for (auto& existing : m_bars)

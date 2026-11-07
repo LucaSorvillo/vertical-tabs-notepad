@@ -24,4 +24,11 @@ namespace npx::pin
     // Set e Clear si chiamano dal thread UI della finestra principale; il subclass gira sui thread degli editor.
     void Set(HWND hwnd, RECT const& natural, RECT const& wanted);
     void Clear(HWND hwnd);
+
+    // Scaricamento della mod ("Esci" della tray): toglie tutti i subclass (ognuno dal thread della sua finestra, con un
+    // messaggio mandato) e gli hook delle richieste in sospeso; da lì in poi Set non installa più niente. Da un thread che
+    // non sia quello di una finestra fissata. false se una finestra non ha risposto (si riprova: le altre sono già libere).
+    bool Uninstall();
+    // Scaricamento annullato (la tray è ripartita prima che la DLL uscisse): Set torna a installare.
+    void Resume();
 }

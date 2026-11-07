@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(VTabsNotepad VERSION 1.2.3 LANGUAGES CXX RC)
+project(VTabsNotepad VERSION 1.3.0 LANGUAGES CXX RC)
 
 if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(FATAL_ERROR "VTabsNotepad va compilato a 64 bit (x64): il Blocco note è un processo x64.")
@@ -40,15 +40,14 @@ target_include_directories(npx_common PUBLIC src/common)
 add_library(VTabsNotepadMod SHARED
     src/mod/dllmain.cpp
     src/mod/CaptionButtons.cpp
+    src/mod/Discovery.cpp
     src/mod/Glass.cpp
     src/mod/Interop.cpp
     src/mod/Log.cpp
     src/mod/ModCore.cpp
     src/mod/PositionPin.cpp
     src/mod/TabColors.cpp
-    src/mod/Tap.cpp
     src/mod/TreeDump.cpp
-    src/mod/VisualTreeWatcher.cpp
     src/mod/WindowLayout.cpp
     src/mod/features/BackToTop.cpp
     src/mod/features/ReopenTab.cpp
@@ -56,8 +55,7 @@ add_library(VTabsNotepadMod SHARED
     src/mod/features/ScrollBarHover.cpp
     src/mod/features/WheelScroll.cpp
     src/mod/features/ScrollRangeFix.cpp
-    src/mod/features/VerticalTabs.cpp
-    src/mod/VTabsNotepadMod.def)
+    src/mod/features/VerticalTabs.cpp)
 target_include_directories(VTabsNotepadMod PRIVATE "${NPX_CPPWINRT_DIR}" src/mod)
 target_precompile_headers(VTabsNotepadMod PRIVATE src/mod/pch.h)
 target_link_libraries(VTabsNotepadMod PRIVATE npx_common windowsapp comctl32 ole32 oleaut32 user32 shell32 dwmapi uxtheme d2d1 dwrite)

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0 — 2026-11-07
+
+- **Exit** now removes the app from Notepad completely: the module leaves the open Notepad windows, and nothing of
+  the app stays inside Notepad (1.2.3 only switched it off). Starting the app again brings it back into the windows
+  already open.
+- Updates take effect without closing Notepad: the old module leaves and the new one comes in.
+- The module finds Notepad's tab bar, menu bar and scrollbars without XAML diagnostics (the API of Visual Studio's
+  Live Visual Tree), which kept the module loaded for good. It now hooks a few public WinUI methods, and puts them
+  back when it leaves.
+
 ## 1.2.3 — 2026-11-07
 
 - **Exit** in the tray menu now turns everything off in the open Notepad windows right away (the vertical tabs used

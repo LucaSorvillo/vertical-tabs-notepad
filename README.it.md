@@ -116,8 +116,9 @@ Con Windows in un'altra lingua le voci sono in inglese, come nell'immagine. **Es
 struttura dell'interfaccia del Blocco note nella cartella dei log: utile per segnalare un problema dopo un
 aggiornamento del Blocco note.
 
-Spegnendo le schede verticali torna subito la normale barra delle schede del Blocco note. **Esci** spegne
-tutto in tutte le finestre del Blocco note aperte, e tutto torna quando riapri l'app.
+Spegnendo le schede verticali torna subito la normale barra delle schede del Blocco note. **Esci** toglie l'app
+da tutte le finestre del Blocco note aperte: il modulo esce e nel Blocco note non ne resta niente. Tutto torna
+quando riapri l'app, anche nelle finestre già aperte.
 
 ## Privacy
 
@@ -131,16 +132,17 @@ tutto in tutte le finestre del Blocco note aperte, e tutto torna quando riapri l
     segnalazione.
   - `runtime\`: una copia del modulo caricato nel Blocco note, così l'app si può aggiornare anche con il
     Blocco note aperto.
-  - `tray-exited.txt`: c'è solo mentre l'app è chiusa con **Esci**, perché le finestre del Blocco note aperte
-    sappiano di tornare normali.
+  - `tray-exited.txt`: c'è solo mentre l'app è chiusa con **Esci**, perché il modulo sappia di uscire dalle
+    finestre del Blocco note aperte.
 
 ## Come funziona
 
 `VTabsNotepad.exe` resta nella tray, tiene d'occhio i processi del Blocco note e ci carica
-`VTabsNotepadMod.dll` (`CreateRemoteThread` + `LoadLibraryW`). Dentro il Blocco note, il modulo si collega
-all'interfaccia WinUI 3 con `InitializeXamlDiagnosticsEx`, l'API che usa il Live Visual Tree di Visual Studio.
-Trova la `TabsBar` del Blocco note (i suoi metadati pubblici sono nel Blocco note stesso, in
-`NotepadXamlUI.winmd`) e costruisce la colonna in una sua isola XAML. La colonna è legata ai dati delle schede
+`VTabsNotepadMod.dll` (`CreateRemoteThread` + `LoadLibraryW`). Dentro il Blocco note, il modulo trova
+l'interfaccia WinUI 3 agganciando alcuni metodi pubblici dei controlli che il Blocco note usa (barra delle schede,
+barra dei menu e barre di scorrimento), più una ricerca UI Automation per le finestre già aperte. Trova la
+`TabsBar` del Blocco note (i suoi metadati pubblici sono nel Blocco note stesso, in `NotepadXamlUI.winmd`) e
+costruisce la colonna in una sua isola XAML. Con **Esci** rimette tutto com'era ed esce. La colonna è legata ai dati delle schede
 del Blocco note e usa i suoi comandi.
 
 La barra delle schede originale resta viva ma nascosta, quindi chiudere una scheda passa sempre dalla domanda

@@ -51,6 +51,9 @@ namespace npx
 
         static constexpr double kButtonWidthDip = 46.0; // come i pulsanti di Windows 11
 
+        // Scaricamento della mod: toglie la classe di finestra (false se ne esiste ancora una finestra).
+        static bool UnregisterWindowClass();
+
     private:
         static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
         LRESULT OnMessage(UINT message, WPARAM wParam, LPARAM lParam);

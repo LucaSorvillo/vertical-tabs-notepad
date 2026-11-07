@@ -72,7 +72,7 @@ namespace npx
         return result;
     }
 
-    bool IsModLoaded(DWORD pid)
+    ModState GetModState(DWORD pid)
     {
         UniqueHandle snapshot;
         // TH32CS_SNAPMODULE può fallire con ERROR_BAD_LENGTH mentre il processo carica moduli: si riprova.
@@ -90,7 +90,7 @@ namespace npx
         }
         if (!snapshot)
         {
-            return false;
+            return ModState::Unknown;
         }
 
         MODULEENTRY32W module{ sizeof(module) };
@@ -98,10 +98,10 @@ namespace npx
         {
             if (EqualsIgnoreCase(module.szModule, kModDllName))
             {
-                return true;
+                return ModState::Loaded;
             }
         }
-        return false;
+        return ModState::NotLoaded;
     }
 
     std::wstring PrepareModDll(const std::wstring& sourceDll)

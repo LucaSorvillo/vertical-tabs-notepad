@@ -12,9 +12,13 @@ namespace npx::glass
     // finestra viene ingrandita o ripristinata. Un aggancio nella sua tabella delle importazioni ricorda ogni richiesta e,
     // se per quella finestra c'è un limite, ne accorcia il margine superiore.
 
-    // Installa l'aggancio (una volta per processo: la DLL non viene mai scaricata). false se non è possibile.
+    // Installa l'aggancio (si può richiamare: se c'è già non fa niente). false se non è possibile.
     bool Install();
     bool Hooked();
+    // Scaricamento della mod ("Esci" della tray): rimette l'importazione di prima. false se la voce non è più la nostra (la
+    // DLL non si scarica). Le finestre devono aver già tolto il loro limite (WindowLayout::Detach). Le chiamate già dentro
+    // l'aggancio le conta lifetime::Calls().
+    bool Uninstall();
 
     // Limite del margine superiore della zona vetro (px client) per una finestra, o nessun limite (torna quella del
     // Blocco note). fallbackTopPx è il margine del Blocco note da usare se la sua richiesta non è nota (finestra creata

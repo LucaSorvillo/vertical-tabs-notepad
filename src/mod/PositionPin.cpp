@@ -2,6 +2,7 @@
 #include "PositionPin.h"
 
 #include "Interop.h"
+#include "Lifetime.h"
 #include "Log.h"
 
 namespace npx::pin
@@ -28,12 +29,21 @@ namespace npx::pin
         std::mutex g_lock;
         std::unordered_map<HWND, Entry> g_entries;
         std::unordered_map<DWORD, PendingHook> g_hooks;
+        std::atomic<bool> g_closing{ false }; // la mod si toglie: niente subclass nuovi
 
         UINT InstallMessage()
         {
             static const UINT message = RegisterWindowMessageW(L"VTabsNotepad.PositionPin");
             return message;
         }
+
+        // Mandato (SendMessage) a una finestra fissata per togliere il subclass dal suo thread.
+        UINT RemoveMessage()
+        {
+            static const UINT message = RegisterWindowMessageW(L"VTabsNotepad.PositionPin.Remove");
+            return message;
+        }
+        constexpr LRESULT kRemoved = 0x4E505852; // 'NPXR'
 
         bool Same(RECT const& a, RECT const& b)
         {
@@ -42,6 +52,14 @@ namespace npx::pin
 
         LRESULT CALLBACK SubclassProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR)
         {
+            const lifetime::CallScope call;
+            if (message == RemoveMessage() && message != 0)
+            {
+                RemoveWindowSubclass(hwnd, &SubclassProc, kSubclassId);
+                std::scoped_lock lock(g_lock);
+                g_entries.erase(hwnd);
+                return kRemoved;
+            }
             if (message == WM_WINDOWPOSCHANGING && lParam)
             {
                 auto* pos = reinterpret_cast<WINDOWPOS*>(lParam);
@@ -88,7 +106,7 @@ namespace npx::pin
         // Sul thread della finestra.
         void Install(HWND hwnd)
         {
-            if (!IsWindow(hwnd))
+            if (!IsWindow(hwnd) || g_closing.load())
             {
                 return;
             }
@@ -106,6 +124,7 @@ namespace npx::pin
         // Sui thread degli editor: esegue le richieste di subclass, poi l'hook si toglie.
         LRESULT CALLBACK GetMessageHook(int code, WPARAM wParam, LPARAM lParam)
         {
+            const lifetime::CallScope call;
             if (code == HC_ACTION && wParam == PM_REMOVE)
             {
                 auto* msg = reinterpret_cast<MSG*>(lParam);
@@ -139,7 +158,7 @@ namespace npx::pin
 
     void Set(HWND hwnd, RECT const& natural, RECT const& wanted)
     {
-        if (!hwnd)
+        if (!hwnd || g_closing.load())
         {
             return;
         }
@@ -201,5 +220,52 @@ namespace npx::pin
         {
             it->second.active = false;
         }
+    }
+
+    bool Uninstall()
+    {
+        g_closing = true;
+        std::vector<HHOOK> hooks;
+        std::vector<HWND> windows;
+        {
+            std::scoped_lock lock(g_lock);
+            for (auto const& [thread, pending] : g_hooks)
+            {
+                hooks.push_back(pending.hook);
+            }
+            g_hooks.clear();
+            for (auto const& [hwnd, entry] : g_entries)
+            {
+                windows.push_back(hwnd);
+            }
+        }
+        // Prima gli hook delle richieste in sospeso (un messaggio di installazione ancora in coda arriva poi alla finestra,
+        // che lo ignora), poi i subclass, ognuno dal thread della sua finestra.
+        for (const HHOOK hook : hooks)
+        {
+            UnhookWindowsHookEx(hook);
+        }
+        size_t removed = 0;
+        bool ok = true;
+        for (const HWND hwnd : windows)
+        {
+            DWORD_PTR result = 0;
+            if (IsWindow(hwnd) &&
+                !SendMessageTimeoutW(hwnd, RemoveMessage(), 0, 0, SMTO_BLOCK | SMTO_ABORTIFHUNG, 3000, &result))
+            {
+                ok = false; // thread della finestra fermo: si riprova più tardi
+                continue;
+            }
+            removed += result == kRemoved ? 1 : 0;
+            std::scoped_lock lock(g_lock);
+            g_entries.erase(hwnd);
+        }
+        NPX_LOG(L"PositionPin: %zu subclass tolti%s.", removed, ok ? L"" : L" (una finestra non risponde: si riprova)");
+        return ok;
+    }
+
+    void Resume()
+    {
+        g_closing = false;
     }
 }
