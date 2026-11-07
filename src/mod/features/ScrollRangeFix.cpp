@@ -133,12 +133,13 @@ namespace npx
         StopTimer();
     }
 
-    void ScrollRangeFix::Apply(Settings const&)
+    void ScrollRangeFix::Apply(Settings const& settings)
     {
         if (const HWND main = MainWindow())
         {
-            // Gate per-finestra (sviluppo): se esiste dev-windows.txt agiamo solo sulle finestre elencate.
-            m_enabled = WindowApplyAllowed(main);
+            // Sempre attiva, tranne con la tray chiusa con "Esci". Gate per-finestra (sviluppo): se esiste dev-windows.txt
+            // agiamo solo sulle finestre elencate.
+            m_enabled = WindowApplyAllowed(main) && !settings.trayExited;
         }
         if (m_enabled)
         {

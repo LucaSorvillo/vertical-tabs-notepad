@@ -29,6 +29,10 @@ namespace npx
         bool dumpTreeOnAttach = false;              // Esporta l'albero XAML appena la mod si aggancia
         bool verboseLog = false;
 
+        // Non nel file: tray chiusa con "Esci" (TrayExitedPath). Lo mette solo la mod (ModCore::ReloadSettings), con tutte
+        // le funzioni spente; Load() e Save() non lo toccano, così le impostazioni salvate restano quelle scelte.
+        bool trayExited = false;
+
         static constexpr int kMinPaneWidth = 140;
         static constexpr int kMaxPaneWidth = 600;
         static constexpr int kCollapsedPaneWidth = 56; // larghezza fissa del pannello compresso (DIP)

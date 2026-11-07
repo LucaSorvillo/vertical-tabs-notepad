@@ -115,7 +115,8 @@ Everything is in the tray menu (right-click the icon):
 **Export XAML tree** saves the structure of Notepad's interface to the log folder: useful when you report a
 problem after a Notepad update.
 
-Turning off the vertical tabs brings back Notepad's normal tab strip right away.
+Turning off the vertical tabs brings back Notepad's normal tab strip right away. **Exit** turns everything off in
+every open Notepad window, and it all comes back when you start the app again.
 
 ## Privacy
 
@@ -127,6 +128,8 @@ Turning off the vertical tabs brings back Notepad's normal tab strip right away.
   - `closed-tabs.txt`: path, position and color of the last 25 closed tabs (saved files only).
   - `logs\`: a diagnostic log, which can contain file names. Have a look before sharing it in an issue.
   - `runtime\`: a copy of the module loaded into Notepad, so the app can be updated while Notepad is open.
+  - `tray-exited.txt`: there only while the app is closed with **Exit**, so the open Notepad windows know to go
+    back to normal.
 
 ## How it works
 
@@ -169,8 +172,8 @@ run them on a PC where Notepad windows can be opened and closed.
 ## Uninstall
 
 **Settings** › **Apps** › **Installed apps** › **Vertical Tabs for Notepad** › **Uninstall**. The
-uninstaller closes the tray app and asks whether to delete the settings and saved data too. Notepad windows
-that are open keep the vertical tabs until Notepad is closed.
+uninstaller closes the tray app, so open Notepad windows go back to the normal tabs right away, and asks
+whether to delete the settings and saved data too.
 
 ## Limitations
 

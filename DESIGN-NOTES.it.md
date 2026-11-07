@@ -378,7 +378,8 @@ Output: `build\bin\VTabsNotepad.exe` e `build\bin\VTabsNotepadMod.dll` (devono s
 build\bin\VTabsNotepad.exe             # avvia la tray
 build\bin\VTabsNotepad.exe --inject    # inietta nei Blocco note già aperti ed esce
 build\bin\VTabsNotepad.exe --reopen-tab # riapre la scheda chiusa nella finestra attiva (come Ctrl+Maiusc+T)
-build\bin\VTabsNotepad.exe --exit      # chiude la tray
+build\bin\VTabsNotepad.exe --exit      # chiude la tray come "Esci" (la mod si spegne nei Blocco note aperti)
+build\bin\VTabsNotepad.exe --exit --keep-mods  # chiude la tray lasciando la mod accesa (compilazione, prove)
 ```
 
 Dal menu della tray: schede verticali on/off, pulsante "Torna su" on/off, "Riapri la scheda chiusa con Ctrl+Maiusc+T" on/off,
@@ -853,7 +854,18 @@ gruppi di schede.
 
 ## Disattivare o rimuovere
 
-Dal menu della tray: "Schede verticali" (on/off) oppure "Esci". Per rimuovere tutto: chiudere la
+Dal menu della tray: "Schede verticali" (on/off) oppure "Esci".
+
+**"Esci" spegne la mod** (dalla 1.2.3; prima restava accesa nelle finestre aperte finché il Blocco note non si
+chiudeva, segnalato dall'utente il 2026-11-07). Alla fine di wWinMain il launcher scrive `tray-exited.txt` nella
+cartella dei dati; `ModCore::ReloadSettings` lo vede (la mod osserva la cartella) e mette `trayExited` con tutte le
+funzioni spente, solo in memoria: `Settings::Load` e `Save` non lo toccano, perché la colonna riscrive settings.ini
+intero quando cambiano larghezza o compressione. `VerticalTabs::Apply` (che rilegge il file da sé) prende
+`trayExited` dall'avviso; `ScrollBarHover` e `ScrollRangeFix`, sempre attive, si spengono con lui; `ReopenTab` si
+spegne senza cancellare la cronologia (la cancella solo spenta dal menu). Anche senza settings.ini vale spenta
+(dati eliminati disinstallando: i valori predefiniti sono accesi). All'avvio il launcher cancella il file e tutto
+torna. Solo "Esci" e `--exit` (anche gli installer, che non mostrano più "restano fino alla chiusura") lo
+scrivono; `--exit --keep-mods` no. Prova: scratchpad `np-exit-test.ps1` (solo conteggi, nessun contenuto). Per rimuovere tutto: chiudere la
 tray, togliere "Avvia con Windows" se attivato, cancellare `%LOCALAPPDATA%\VTabsNotepad` e la cartella
 del progetto. Il Blocco note non viene mai modificato su disco.
 

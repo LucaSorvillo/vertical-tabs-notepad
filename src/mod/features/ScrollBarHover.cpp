@@ -86,16 +86,16 @@ namespace npx
         return m_main;
     }
 
-    void ScrollBarHover::Apply(Settings const&)
+    void ScrollBarHover::Apply(Settings const& settings)
     {
         const HWND main = MainWindow();
         if (!main)
         {
             return; // ci riprova il prossimo Apply (la finestra si sta ancora costruendo)
         }
-        // Sempre attiva (niente opzione, su richiesta dell'utente). Resta solo il gate per-finestra dello sviluppo: se
-        // esiste dev-windows.txt agiamo solo sulle finestre elencate.
-        const bool wanted = WindowApplyAllowed(main);
+        // Sempre attiva (niente opzione, su richiesta dell'utente), tranne con la tray chiusa con "Esci". Resta il gate
+        // per-finestra dello sviluppo: se esiste dev-windows.txt agiamo solo sulle finestre elencate.
+        const bool wanted = WindowApplyAllowed(main) && !settings.trayExited;
         if (wanted && !m_enabled)
         {
             m_enabled = true;
@@ -105,8 +105,8 @@ namespace npx
         {
             m_enabled = false;
             const int restored = RestoreAll();
-            NPX_LOG(L"ScrollBarHover: finestra esclusa (modalità sviluppo): barre di scorrimento di nuovo con il ritardo di sistema (%d animazioni).",
-                    restored);
+            NPX_LOG(L"ScrollBarHover: %s: barre di scorrimento di nuovo con il ritardo di sistema (%d animazioni).",
+                    settings.trayExited ? L"tray chiusa" : L"finestra esclusa (modalità sviluppo)", restored);
         }
     }
 

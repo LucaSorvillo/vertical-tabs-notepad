@@ -37,6 +37,11 @@ namespace npx
     std::wstring SettingsPath();
     // %LOCALAPPDATA%\VTabsNotepad\logs (creata se manca).
     std::wstring LogDirectory();
+    // %LOCALAPPDATA%\VTabsNotepad\tray-exited.txt: c'è mentre la tray è chiusa con "Esci" (o --exit). La mod si spegne in
+    // tutte le finestre del Blocco note come con le funzioni spente dal menu (anche quelle sempre attive), senza toccare
+    // settings.ini, e si riaccende quando la tray riparte (che lo cancella). --exit --keep-mods (compilazione, prove) esce
+    // senza crearlo.
+    std::wstring TrayExitedPath();
 
     // Evento con nome con cui il launcher chiede a un processo Notepad di esportare l'albero XAML.
     std::wstring DumpTreeEventName(DWORD pid);

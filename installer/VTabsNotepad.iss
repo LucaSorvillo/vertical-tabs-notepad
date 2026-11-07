@@ -4,7 +4,7 @@
 
 #define AppName "Vertical Tabs for Notepad"
 #define AppShortName "VTabsNotepad"
-#define AppVersion "1.2.2"
+#define AppVersion "1.2.3"
 #define AppPublisher "LucaSorvillo"
 #define AppRepo "https://github.com/LucaSorvillo/vertical-tabs-notepad"
 #define AppSite "https://lucasorvillo.github.io/vertical-tabs-notepad/"
@@ -54,8 +54,6 @@ english.AutoStart=Start {#AppName} when Windows starts
 italian.AutoStart=Avvia {#AppName} all'avvio di Windows
 english.RemoveData=Do you also want to delete the settings and saved data (tab colors, closed tabs history)?
 italian.RemoveData=Vuoi eliminare anche le impostazioni e i dati salvati (colori delle schede, cronologia delle schede chiuse)?
-english.RestartNote=The vertical tabs stay in the Notepad windows that are already open until Notepad is closed and reopened.
-italian.RestartNote=Le schede verticali restano nelle finestre del Blocco note già aperte finché il Blocco note non viene chiuso e riaperto.
 english.TrayNote=The app runs in the notification area (tray): right-click its icon for the options.
 italian.TrayNote=L'app resta nell'area di notifica (tray): clic destro sulla sua icona per le opzioni.
 
@@ -117,7 +115,5 @@ begin
     if DirExists(Data) and (not UninstallSilent) then
       if MsgBox(CustomMessage('RemoveData'), mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES then
         DelTree(Data, True, True, True);
-    if not UninstallSilent then
-      MsgBox(CustomMessage('RestartNote'), mbInformation, MB_OK);
   end;
 end;

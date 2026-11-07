@@ -670,8 +670,21 @@ namespace npx
 
     bool ModCore::ReloadSettings()
     {
-        const Settings fresh = Settings::Load();
+        Settings fresh = Settings::Load();
         log::SetVerbose(fresh.verboseLog);
+        // Tray chiusa con "Esci": tutte le funzioni spente (anche quelle sempre attive, che guardano trayExited) finché non
+        // riparte. Solo qui, in memoria: settings.ini resta com'è. Senza settings.ini (dati eliminati disinstallando l'app:
+        // il launcher lo crea sempre prima di iniettare) vale lo stesso, invece dei valori predefiniti (accesi).
+        const bool exitedByTray = GetFileAttributesW(TrayExitedPath().c_str()) != INVALID_FILE_ATTRIBUTES;
+        const bool noSettings = GetFileAttributesW(SettingsPath().c_str()) == INVALID_FILE_ATTRIBUTES;
+        if (exitedByTray || noSettings)
+        {
+            fresh.trayExited = true;
+            fresh.verticalTabs = false;
+            fresh.backToTop = false;
+            fresh.reopenTab = false;
+            fresh.noSmoothScroll = false;
+        }
 
         // Anche l'allowlist di sviluppo cambia lo stato effettivo delle finestre.
         std::string devWindows;
@@ -691,6 +704,12 @@ namespace npx
 
         std::scoped_lock lock(m_lock);
         const bool changed = !(fresh == m_settings) || devWindows != m_devWindows;
+        if (fresh.trayExited != m_settings.trayExited)
+        {
+            NPX_LOG(!fresh.trayExited ? L"Tray di nuovo avviata: la mod si riaccende con le impostazioni salvate."
+                    : exitedByTray    ? L"Tray chiusa con \"Esci\": la mod si spegne in tutte le finestre (come con le funzioni spente)."
+                                      : L"Impostazioni non trovate (app disinstallata?): la mod si spegne in tutte le finestre.");
+        }
         m_settings = fresh;
         m_devWindows = std::move(devWindows);
         return changed;
@@ -705,9 +724,10 @@ namespace npx
     void ModCore::ApplySettingsToAllWindows()
     {
         const Settings settings = CurrentSettings();
-        NPX_LOG(L"Impostazioni cambiate: schede verticali %s, larghezza %d, %s; torna su %s; riapri scheda %s; scorrimento fluido %s",
+        NPX_LOG(L"Impostazioni cambiate: schede verticali %s, larghezza %d, %s; torna su %s; riapri scheda %s; scorrimento fluido %s%s",
                 settings.verticalTabs ? L"ON" : L"OFF", settings.paneWidth, settings.collapsed ? L"compresso" : L"espanso",
-                settings.backToTop ? L"ON" : L"OFF", settings.reopenTab ? L"ON" : L"OFF", settings.noSmoothScroll ? L"OFF" : L"ON");
+                settings.backToTop ? L"ON" : L"OFF", settings.reopenTab ? L"ON" : L"OFF", settings.noSmoothScroll ? L"OFF" : L"ON",
+                settings.trayExited ? L"; tray chiusa: tutto spento" : L"");
 
         for (auto const& entry : SnapshotWindows())
         {

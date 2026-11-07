@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.3 — 2026-11-07
+
+- **Exit** in the tray menu now turns everything off in the open Notepad windows right away (the vertical tabs used
+  to stay until Notepad was closed). Everything comes back when you start the app again, and the closed-tabs
+  history stays. Uninstalling the app does the same.
+
 ## 1.2.2 — 2026-11-07
 
 - The active tab in the column shows the unsaved-changes dot instead of the X, like Notepad's own tabs: the X

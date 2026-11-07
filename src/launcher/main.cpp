@@ -9,7 +9,8 @@
 //   VTabsNotepad.exe --inject   inietta la mod nei Notepad aperti ed esce
 //   VTabsNotepad.exe --dump     chiede ai Notepad aperti di esportare l'albero XAML ed esce
 //   VTabsNotepad.exe --reopen-tab  riapre la scheda chiusa nella finestra attiva (come Ctrl+Maiusc+T)
-//   VTabsNotepad.exe --exit     chiude l'istanza della tray in esecuzione
+//   VTabsNotepad.exe --exit     chiude l'istanza della tray in esecuzione (come "Esci": la mod si spegne nei Notepad aperti)
+//   VTabsNotepad.exe --exit --keep-mods  (compilazione, prove) chiude la tray lasciando la mod accesa
 
 #include "Injector.h"
 #include "Settings.h"
@@ -47,7 +48,14 @@ namespace
         IdDumpTree,
         IdDevMode,
         IdExit,
+        IdExitKeepMods, // --exit --keep-mods (non nel menu)
     };
+
+    bool g_modsOffOnExit = false; // "Esci" (non --keep-mods)
+
+    // "Esci": la mod si spegne in tutte le finestre del Blocco note aperte (vede comparire il file nella cartella dei dati), come
+    // se le funzioni fossero spente dal menu; le impostazioni restano quelle scelte. Si riaccende quando la tray riparte.
+    void SignalModsOff();
 
     // dev-windows.txt limita la mod alle finestre di prova: se resta lì per sbaglio, la feature
     // sembra non funzionare. Il launcher lo segnala e permette di rimuoverlo.
@@ -333,11 +341,32 @@ namespace
             LauncherLog(L"Modalità sviluppo disattivata (dev-windows.txt rimosso).");
             break;
         case IdExit:
+            g_modsOffOnExit = true; // alla fine di wWinMain
+            DestroyWindow(hwnd);
+            break;
+        case IdExitKeepMods:
+            LauncherLog(L"Uscita con --keep-mods: la mod resta accesa.");
             DestroyWindow(hwnd);
             break;
         default:
             break;
         }
+    }
+
+    void SignalModsOff()
+    {
+        const HANDLE file = CreateFileW(npx::TrayExitedPath().c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, CREATE_ALWAYS,
+                                        FILE_ATTRIBUTE_NORMAL, nullptr);
+        if (file == INVALID_HANDLE_VALUE)
+        {
+            LauncherLog(L"Esci: segnale per la mod non scritto (%lu): la mod resta accesa fino alla chiusura del Blocco note.", GetLastError());
+            return;
+        }
+        static const char kText[] = "VTabsNotepad closed with Exit: the mod is off until the tray starts again.\r\n";
+        DWORD written = 0;
+        WriteFile(file, kText, sizeof(kText) - 1, &written, nullptr);
+        CloseHandle(file);
+        LauncherLog(L"Esci: la mod si spegne nelle finestre del Blocco note aperte.");
     }
 
     LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -486,7 +515,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int)
     {
         if (HWND existing = FindWindowW(kWindowClass, nullptr))
         {
-            PostMessageW(existing, WM_COMMAND, IdExit, 0);
+            PostMessageW(existing, WM_COMMAND, HasArgument(L"--keep-mods") ? IdExitKeepMods : IdExit, 0);
         }
         return 0;
     }
@@ -504,6 +533,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int)
     {
         npx::Settings{}.Save();
     }
+    // Chiusa l'ultima volta con "Esci": la mod nei Notepad aperti si riaccende (vede sparire il file).
+    const bool modsBackOn = DeleteFileW(npx::TrayExitedPath().c_str()) != FALSE;
 
     g_taskbarCreatedMsg = RegisterWindowMessageW(L"TaskbarCreated");
 
@@ -520,6 +551,10 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int)
         return 1;
     }
     LauncherLog(L"VTabsNotepad avviato (%s).", ExeDirectory().c_str());
+    if (modsBackOn)
+    {
+        LauncherLog(L"Avvio dopo \"Esci\": la mod si riaccende nelle finestre del Blocco note aperte.");
+    }
     if (IsDevModeActive())
     {
         LauncherLog(L"Attenzione: modalità sviluppo attiva (%s): la mod agisce solo sulle finestre elencate.",
@@ -533,6 +568,10 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int)
         DispatchMessageW(&message);
     }
 
+    if (g_modsOffOnExit)
+    {
+        SignalModsOff();
+    }
     LauncherLog(L"VTabsNotepad chiuso.");
     if (g_icon)
     {

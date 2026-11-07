@@ -669,13 +669,14 @@ namespace npx
         // contenuto del file adesso, altrimenti un valore intermedio verrebbe riapplicato per ultimo.
         Settings settings = Settings::Load();
         settings.dumpTreeOnAttach = notified.dumpTreeOnAttach;
+        settings.trayExited = notified.trayExited; // tray chiusa con "Esci" (non nel file): colonna spenta
 
         const bool geometryChanged = settings.paneWidth != m_settings.paneWidth || settings.collapsed != m_settings.collapsed;
         m_settings = settings;
         ApplyAppearance();
 
         // Gate per-finestra (sviluppo): se esiste dev-windows.txt agiamo solo sulle finestre elencate.
-        const bool wanted = settings.verticalTabs && WindowApplyAllowed(m_main);
+        const bool wanted = settings.verticalTabs && !settings.trayExited && WindowApplyAllowed(m_main);
         if (wanted && !m_enabled)
         {
             Enable();

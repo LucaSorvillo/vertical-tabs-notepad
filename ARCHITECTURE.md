@@ -22,7 +22,7 @@ windows.
 ## Launcher (`src/launcher`)
 
 - `main.cpp`: tray icon and menu, settings, "start with Windows" (`HKCU\...\Run`), command line
-  (`--exit`, `--inject`, `--inject-pid <pid>`, `--reopen-tab`, `--dump`).
+  (`--exit`, `--exit --keep-mods`, `--inject`, `--inject-pid <pid>`, `--reopen-tab`, `--dump`).
 - `Injector.cpp`: finds Notepad processes (Toolhelp snapshots, checked again when the shell hook reports a new
   window) and skips those that already have the module. The DLL is copied to
   `%LOCALAPPDATA%\VTabsNotepad\runtime\<stamp>\` (stamp = time and size of the file) and that copy is loaded
@@ -101,6 +101,12 @@ to `TabsBar`, `TabItemViewModel` and their commands (`ReorderTab`, `SelectTabByT
 - Every event handler toward the XAML runtime is guarded: no exception leaves the module's code.
 - The module is never unloaded, because its hooks stay installed. Turning a feature off restores Notepad's
   layout. A new build takes effect when Notepad restarts.
+- **Exit** (tray menu or `--exit`, which the installer uses too) leaves `tray-exited.txt` in the data folder.
+  The module watches the folder and turns every feature off while the file is there, including the ones that
+  are always on (scroll bars, scroll ranges), without touching `settings.ini`. The closed-tabs history stays.
+  The launcher deletes the file when it starts, and the module turns everything back on. A missing
+  `settings.ini` counts as off too (data deleted when uninstalling: the defaults would be on).
+  `--exit --keep-mods` (build and test scripts) exits without the file.
 - `TreeDump.cpp` exports the XAML tree (tray menu › "Esporta albero XAML") to diagnose a Notepad update.
 
 ## Languages
@@ -116,7 +122,7 @@ Setup detects the UI language; `ShowLanguageDialog=no`, English first). The test
 ## Data files
 
 All in `%LOCALAPPDATA%\VTabsNotepad`: `settings.ini`, `tab-colors.ini`, `closed-tabs.txt`, `logs\`,
-`runtime\`. The [README](README.md#privacy) lists what each one contains.
+`runtime\`, and `tray-exited.txt` while the app is closed with Exit. The [README](README.md#privacy) lists what each one contains.
 
 ## Build and tests
 

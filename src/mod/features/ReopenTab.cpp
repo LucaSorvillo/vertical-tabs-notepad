@@ -312,9 +312,9 @@ namespace npx
         }
         else if (!wanted && m_enabled)
         {
-            // Spenta dalla tray: si dimentica anche la cronologia su disco. Esclusa solo questa finestra (modalità
-            // sviluppo): la cronologia resta.
-            Disable(!settings.reopenTab);
+            // Spenta dal menu della tray: si dimentica anche la cronologia su disco. Esclusa solo questa finestra (modalità
+            // sviluppo) o tray chiusa con "Esci": la cronologia resta (riaprendo la tray, Ctrl+Maiusc+T la ritrova).
+            Disable(!settings.reopenTab && !settings.trayExited);
         }
     }
 

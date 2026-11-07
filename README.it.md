@@ -116,7 +116,8 @@ Con Windows in un'altra lingua le voci sono in inglese, come nell'immagine. **Es
 struttura dell'interfaccia del Blocco note nella cartella dei log: utile per segnalare un problema dopo un
 aggiornamento del Blocco note.
 
-Spegnendo le schede verticali torna subito la normale barra delle schede del Blocco note.
+Spegnendo le schede verticali torna subito la normale barra delle schede del Blocco note. **Esci** spegne
+tutto in tutte le finestre del Blocco note aperte, e tutto torna quando riapri l'app.
 
 ## Privacy
 
@@ -130,6 +131,8 @@ Spegnendo le schede verticali torna subito la normale barra delle schede del Blo
     segnalazione.
   - `runtime\`: una copia del modulo caricato nel Blocco note, così l'app si può aggiornare anche con il
     Blocco note aperto.
+  - `tray-exited.txt`: c'è solo mentre l'app è chiusa con **Esci**, perché le finestre del Blocco note aperte
+    sappiano di tornare normali.
 
 ## Come funziona
 
@@ -175,8 +178,8 @@ avviali su un PC dove si possono aprire e chiudere finestre del Blocco note.
 ## Disinstallazione
 
 **Impostazioni** › **App** › **App installate** › **Vertical Tabs for Notepad** › **Disinstalla**. La
-disinstallazione chiude l'app nella tray e chiede se eliminare anche impostazioni e dati salvati. Le finestre
-del Blocco note già aperte tengono le schede verticali finché il Blocco note non viene chiuso.
+disinstallazione chiude l'app nella tray, quindi le finestre del Blocco note aperte tornano subito alle schede
+normali, e chiede se eliminare anche impostazioni e dati salvati.
 
 ## Limiti
 

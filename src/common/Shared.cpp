@@ -33,6 +33,11 @@ namespace npx
         return dir;
     }
 
+    std::wstring TrayExitedPath()
+    {
+        return DataDirectory() + L"\\tray-exited.txt";
+    }
+
     std::wstring DumpTreeEventName(DWORD pid)
     {
         return L"Local\\VTabsNotepad.DumpTree." + std::to_wstring(pid);
