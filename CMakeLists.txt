@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(VTabsNotepad VERSION 1.2.1 LANGUAGES CXX RC)
+project(VTabsNotepad VERSION 1.2.2 LANGUAGES CXX RC)
 
 if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(FATAL_ERROR "VTabsNotepad va compilato a 64 bit (x64): il Blocco note è un processo x64.")

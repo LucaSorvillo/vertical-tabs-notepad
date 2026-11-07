@@ -2217,13 +2217,14 @@ namespace npx
             row.title.ClearValue(muxc::TextBlock::ForegroundProperty());
         }
 
-        // Come nella barra originale: pallino se modificata, X al passaggio del mouse o se attiva.
+        // Come nella barra originale: X al passaggio del mouse; senza il mouse sopra, la scheda modificata mostra il
+        // pallino (anche quella attiva) e quella attiva non modificata la X.
         // L'icona c'è solo a pannello compresso, dove è l'unica parte visibile (centrata, con il pallino
         // "modificata" sull'angolo); da espanso resta il titolo e il colore è nel fondo della riga.
         const bool compact = m_compactVisual;
         const bool icon = compact;
         const bool modified = row.item.IsModified();
-        const bool showClose = !compact && (row.hovered || selected);
+        const bool showClose = !compact && (row.hovered || (selected && !modified));
         row.close.Visibility(showClose ? mux::Visibility::Visible : mux::Visibility::Collapsed);
         row.dot.Visibility(!compact && !showClose && modified ? mux::Visibility::Visible : mux::Visibility::Collapsed);
         row.badge.Visibility(compact && modified ? mux::Visibility::Visible : mux::Visibility::Collapsed);

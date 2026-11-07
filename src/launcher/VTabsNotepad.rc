@@ -5,8 +5,8 @@
 1 ICON "VTabsNotepad.ico"
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,2,1,0
- PRODUCTVERSION 1,2,1,0
+ FILEVERSION 1,2,2,0
+ PRODUCTVERSION 1,2,2,0
  FILEFLAGSMASK 0x3fL
  FILEFLAGS 0x0L
  FILEOS VOS_NT_WINDOWS32
@@ -18,11 +18,11 @@ BEGIN
         BLOCK "041004b0"
         BEGIN
             VALUE "FileDescription", "Vertical Tabs for Notepad - schede verticali per il Blocco note di Windows 11"
-            VALUE "FileVersion", "1.2.1.0"
+            VALUE "FileVersion", "1.2.2.0"
             VALUE "InternalName", "VTabsNotepad"
             VALUE "OriginalFilename", "VTabsNotepad.exe"
             VALUE "ProductName", "Vertical Tabs for Notepad"
-            VALUE "ProductVersion", "1.2.1.0"
+            VALUE "ProductVersion", "1.2.2.0"
             VALUE "LegalCopyright", "Copyright (c) 2026 LucaSorvillo - MIT License"
         END
     END

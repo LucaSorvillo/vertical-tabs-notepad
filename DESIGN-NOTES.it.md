@@ -124,6 +124,9 @@ dimensione, peso e colore vengono letti dalle schede native (Segoe UI Variable a
 in grigio `TextFillColorSecondary`, attiva peso 600 in bianco; al passaggio del mouse il colore non
 cambia, come nell'originale). A pannello compresso ogni scheda è un'icona con l'iniziale
 del titolo (come la favicon delle schede del browser); da espanso le righe mostrano solo il titolo.
+A destra del titolo, come nelle schede native, la scheda con modifiche non salvate mostra il pallino (anche
+quella attiva, dalla 1.2.2) e passandoci sopra con il mouse la X; la scheda attiva senza modifiche mostra
+sempre la X.
 
 - **Comprimi/espandi** (pulsante in alto a sinistra, come le schede verticali di Chrome/Edge): da
   compresso ogni scheda diventa un'icona con l'iniziale del titolo, con il pallino se è modificata. Lo
@@ -604,7 +607,8 @@ tastiera reali e screenshot:
 
 - selezione dal pannello e sincronizzazione inversa (Ctrl+Tab ecc.), cambi rapidi di scheda;
 - "Nuova scheda", chiusura con X / clic centrale / `Canc` (stessa logica nativa, prompt compreso);
-- X al passaggio del mouse;
+- X al passaggio del mouse; pallino al posto della X sulle schede modificate, anche su quella attiva (1.2.2,
+  confrontato con le schede native senza mod: attiva modificata = pallino, X con il mouse sopra; attiva salvata = X);
 - larghezza, finestra piccola e massimizzata. Il lato destro e la ricerca nelle schede, verificati anche
   loro, sono stati tolti il 2026-11-04 e il 2026-11-05;
 - disattivazione/riattivazione con ripristino completo del layout originale;

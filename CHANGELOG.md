@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.2 — 2026-11-07
+
+- The active tab in the column shows the unsaved-changes dot instead of the X, like Notepad's own tabs: the X
+  appears when the mouse is over the tab, and stays on the active tab when it has no unsaved changes.
+
 ## 1.2.1 — 2026-11-07
 
 - Fixed: clicking a line to switch back to Notepad from another app could make the text jump and put the caret,
